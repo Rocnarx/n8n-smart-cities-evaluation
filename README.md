@@ -113,17 +113,6 @@ La metodología se describe en `docs/methodology.md`.
 
 ---
 
-### 🚀 Estado del proyecto
-
-- [x] Estructura del repositorio
-- [ ] Infraestructura Docker
-- [ ] Flujos base Caso A y B
-- [ ] Dashboard de métricas
-- [ ] Experimentos
-- [ ] Documentación final
-
----
-
 ### 🔁 Reproducibilidad
 
 Cualquier evaluador puede:
