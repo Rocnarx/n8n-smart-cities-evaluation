@@ -1,0 +1,406 @@
+{
+  "name": "CASO B - Denuncia Digital (v2 con rechazos Auth + Identidad)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Webhook - Registro Denuncia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoB-denuncia-digital-v2",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "init",
+      "name": "Init + t0",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -950,
+        300
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "denuncia_id",
+              "value": "={{ $uuid }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "ciudadano_id",
+              "value": "={{ $json.body?.ciudadano_id || 'CC123456789' }}"
+            },
+            {
+              "name": "descripcion",
+              "value": "={{ $json.body?.descripcion || 'Denuncia simulada' }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-auth",
+      "name": "Wait 1s - Autenticación GOV.CO",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-auth",
+      "name": "Mock - GOV.CO ID-Gob",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "auth_status",
+              "value": "={{ $json.body?.force_auth_fail ? 'FAILED' : 'AUTHENTICATED' }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "if-auth",
+      "name": "IF - ¿Autenticado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.auth_status }}",
+              "operation": "equals",
+              "value2": "AUTHENTICATED"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reject-auth",
+      "name": "Rechazo - Autenticación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        500
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "fail_stage",
+              "value": "AUTHENTICATION"
+            },
+            {
+              "name": "fail_reason",
+              "value": "USER_NOT_AUTHENTICATED"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-id",
+      "name": "Wait 1s - Registraduría",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-id",
+      "name": "Mock - Verificación Identidad",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "identidad_validada",
+              "value": "={{ !$json.body?.force_id_fail }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "if-id",
+      "name": "IF - ¿Identidad válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        400,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.identidad_validada }}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reject-id",
+      "name": "Rechazo - Identidad",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        400,
+        500
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "fail_stage",
+              "value": "IDENTITY"
+            },
+            {
+              "name": "fail_reason",
+              "value": "IDENTITY_NOT_VALID"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "success",
+      "name": "t1 + latencia (ok parcial)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Registro Denuncia": {
+      "main": [
+        [
+          {
+            "node": "Init + t0",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Init + t0": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Autenticación GOV.CO",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Autenticación GOV.CO": {
+      "main": [
+        [
+          {
+            "node": "Mock - GOV.CO ID-Gob",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - GOV.CO ID-Gob": {
+      "main": [
+        [
+          {
+            "node": "IF - ¿Autenticado?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IF - ¿Autenticado?": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Registraduría",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "node": "Rechazo - Autenticación",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Rechazo - Autenticación": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Registraduría": {
+      "main": [
+        [
+          {
+            "node": "Mock - Verificación Identidad",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - Verificación Identidad": {
+      "main": [
+        [
+          {
+            "node": "IF - ¿Identidad válida?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IF - ¿Identidad válida?": {
+      "main": [
+        [
+          {
+            "node": "t1 + latencia (ok parcial)",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "node": "Rechazo - Identidad",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Rechazo - Identidad": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (ok parcial)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

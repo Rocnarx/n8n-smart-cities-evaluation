@@ -1,0 +1,755 @@
+{
+  "name": "CASO B - Denuncia Digital (Experimental v1, 1s latency mocks)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoB-denuncia-digital",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook - Registro Denuncia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        7728,
+        64
+      ],
+      "id": "cea22b80-c120-4ffb-9484-160464fea74f",
+      "webhookId": "4de13781-e992-43d8-9994-7f77a5e2e7e5"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_id",
+              "value": "={{ $uuid }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $json.body?.citizen_id || 'CC123456' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Init + t0 (normalización)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        7984,
+        64
+      ],
+      "id": "53e7b820-f761-4cb5-8d8f-a65096b229b2"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "delay_seconds",
+              "value": "={{ Math.random() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Delay Random - Wait - Autenticación GOV.CO",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        8096,
+        304
+      ],
+      "id": "58e39874-69fe-4d7e-94d4-fc504e99fd1d"
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait - Autenticación GOV.CO",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        8224,
+        64
+      ],
+      "id": "755ca36d-e206-4285-801b-955b76bf0f03",
+      "webhookId": "f6024b05-4e45-4001-982b-df4e3e8bb766"
+    },
+    {
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "identity_valid",
+              "value": "={{ Math.random() > 0.2 }}"
+            }
+          ],
+          "string": [
+            {
+              "name": "auth_provider",
+              "value": "ID-GOB (MOCK)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Mock - GOV.CO / Registraduría",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        8480,
+        64
+      ],
+      "id": "079d9abd-13cd-4d6b-a943-d6750af2102d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.identity_valid }}",
+              "operation": "isTrue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "IF - Identidad válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        8736,
+        64
+      ],
+      "id": "cec9ac14-4814-469f-aa2f-3b45f9b0abb1"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "delay_seconds",
+              "value": "={{ Math.random() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Delay Random - Wait - Clasificación Policía",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        8768,
+        -128
+      ],
+      "id": "b6da33f4-97b3-4975-801e-8ee1bba4670c"
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait - Clasificación Policía",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        8976,
+        -128
+      ],
+      "id": "97cb385a-db79-4f1e-9ebb-3df860694928",
+      "webhookId": "f63188e3-ec96-4330-be53-c580e43dee90"
+    },
+    {
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "crime_classified",
+              "value": "={{ Math.random() > 0.1 }}"
+            }
+          ],
+          "string": [
+            {
+              "name": "crime_type",
+              "value": "HURTO (SIMULADO)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Mock - Policía Nacional (SPOA/SIDENCO)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        9232,
+        -128
+      ],
+      "id": "11d5cbb1-1154-4e3f-a980-c4d4152d04b4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.crime_classified }}",
+              "operation": "isTrue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "IF - Delito clasificable?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        9488,
+        -128
+      ],
+      "id": "08a9a574-e15f-4463-9333-48d61df61767"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "delay_seconds",
+              "value": "={{ Math.random() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Delay Random - Wait - Registro Fiscalía",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        9504,
+        -240
+      ],
+      "id": "486bea9c-db62-466c-abe7-f5f080637db2"
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait - Registro Fiscalía",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        9728,
+        -240
+      ],
+      "id": "b8cd6dbc-3017-4af4-9cf7-98a4e1da67c1",
+      "webhookId": "c06a2aba-7f30-4a4b-8df8-fb94492922ef"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "criminal_report_number",
+              "value": "={{ 'SPOA-' + Math.floor(Math.random()*1000000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Mock - Fiscalía General (SPOA)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        9984,
+        -240
+      ],
+      "id": "d54c7ea2-035b-4b59-b16d-3a33bae66cdf"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "delay_seconds",
+              "value": "={{ Math.random() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Delay Random - Wait - Geocodificación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        10016,
+        -240
+      ],
+      "id": "ce4c6832-a22e-4d8d-bac6-f4ceb3c586a4"
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait - Geocodificación",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        10224,
+        -240
+      ],
+      "id": "bd93db40-0943-4dba-8a23-c3f2d6aa3232",
+      "webhookId": "9af886bc-5813-4840-87f1-cee9edab27a4"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "geo_reference",
+              "value": "LOCALIDAD_07 (MOCK)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Mock - Servicios Geoespaciales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        10480,
+        -240
+      ],
+      "id": "934884fb-337f-4851-a3e7-966555158df2"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "delay_seconds",
+              "value": "={{ Math.random() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Delay Random - Wait - Notificación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        10512,
+        -240
+      ],
+      "id": "00ddba1d-d35b-4747-b92e-d901534515f8"
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait - Notificación",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        10736,
+        -240
+      ],
+      "id": "b8de22e5-2a13-43e5-9c59-b47a50b3f4bd",
+      "webhookId": "befadd04-179a-4718-9596-c607a6f3567e"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "notification_status",
+              "value": "SENT"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Mock - Correo Institucional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        10976,
+        -240
+      ],
+      "id": "422ace84-5bea-40a8-92e0-29d228f031b5"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "t1 + latencia (éxito)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        11232,
+        -240
+      ],
+      "id": "c14249ca-eacf-4e66-89ea-e2a41ea609df"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "case_id",
+              "value": "={{ $json.case_id }}"
+            },
+            {
+              "name": "criminal_report_number",
+              "value": "={{ $json.criminal_report_number }}"
+            },
+            {
+              "name": "geo_reference",
+              "value": "={{ $json.geo_reference }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Build Response (éxito)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        11488,
+        -240
+      ],
+      "id": "04e00735-3f22-42e7-bfe3-4aac1d3b6835"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook (éxito)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        11728,
+        -240
+      ],
+      "id": "8263eabe-8001-48d4-a93e-6a3599f6b873"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Response - Identidad inválida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        8976,
+        272
+      ],
+      "id": "4c9902c3-0a80-4ee0-b5ac-bc1eedc579da"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Response - Clasificación fallida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        9728,
+        64
+      ],
+      "id": "07d4e1dd-cbb4-4be5-9f4c-7cb582383759"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Registro Denuncia": {
+      "main": [
+        [
+          {
+            "node": "Init + t0 (normalización)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init + t0 (normalización)": {
+      "main": [
+        [
+          {
+            "node": "Set Delay Random - Wait - Autenticación GOV.CO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Autenticación GOV.CO": {
+      "main": [
+        [
+          {
+            "node": "Mock - GOV.CO / Registraduría",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - GOV.CO / Registraduría": {
+      "main": [
+        [
+          {
+            "node": "IF - Identidad válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Identidad válida?": {
+      "main": [
+        [
+          {
+            "node": "Set Delay Random - Wait - Clasificación Policía",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response - Identidad inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Clasificación Policía": {
+      "main": [
+        [
+          {
+            "node": "Mock - Policía Nacional (SPOA/SIDENCO)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Policía Nacional (SPOA/SIDENCO)": {
+      "main": [
+        [
+          {
+            "node": "IF - Delito clasificable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Delito clasificable?": {
+      "main": [
+        [
+          {
+            "node": "Set Delay Random - Wait - Registro Fiscalía",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response - Clasificación fallida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Registro Fiscalía": {
+      "main": [
+        [
+          {
+            "node": "Mock - Fiscalía General (SPOA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Fiscalía General (SPOA)": {
+      "main": [
+        [
+          {
+            "node": "Set Delay Random - Wait - Geocodificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Geocodificación": {
+      "main": [
+        [
+          {
+            "node": "Mock - Servicios Geoespaciales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Servicios Geoespaciales": {
+      "main": [
+        [
+          {
+            "node": "Set Delay Random - Wait - Notificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - Notificación": {
+      "main": [
+        [
+          {
+            "node": "Mock - Correo Institucional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Correo Institucional": {
+      "main": [
+        [
+          {
+            "node": "t1 + latencia (éxito)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (éxito)": {
+      "main": [
+        [
+          {
+            "node": "Build Response (éxito)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (éxito)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (éxito)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Delay Random - Wait - Autenticación GOV.CO": {
+      "main": [
+        [
+          {
+            "node": "Wait - Autenticación GOV.CO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Delay Random - Wait - Clasificación Policía": {
+      "main": [
+        [
+          {
+            "node": "Wait - Clasificación Policía",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Delay Random - Wait - Registro Fiscalía": {
+      "main": [
+        [
+          {
+            "node": "Wait - Registro Fiscalía",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Delay Random - Wait - Geocodificación": {
+      "main": [
+        [
+          {
+            "node": "Wait - Geocodificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Delay Random - Wait - Notificación": {
+      "main": [
+        [
+          {
+            "node": "Wait - Notificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "f24314a4-68c5-4ce9-849b-15b9d96be53a",
+  "meta": {
+    "instanceId": "70eff7c86c3f188fcfb0c418dfd026640cfcb8b1e66150a1fc62a068cfd82760"
+  },
+  "id": "HQTSJfyIKgLSaiN72K4E8",
+  "tags": []
+}

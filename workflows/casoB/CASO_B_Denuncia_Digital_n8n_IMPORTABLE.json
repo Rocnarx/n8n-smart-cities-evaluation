@@ -1,0 +1,467 @@
+{
+  "name": "CASO B - Proceso de Denuncia Digital (Experimental v1, 1s latency mocks)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoB-denuncia-digital",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-1",
+      "name": "Webhook - Registro Denuncia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "denuncia_id",
+              "value": "={{ $uuid }}"
+            },
+            {
+              "name": "ciudadano_id",
+              "value": "={{ $json.body?.ciudadano_id || 'CC123456789' }}"
+            },
+            {
+              "name": "descripcion",
+              "value": "={{ $json.body?.descripcion || 'Denuncia simulada' }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "init-1",
+      "name": "Init + t0",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -950,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "wait-auth",
+      "name": "Wait 1s - Autenticación GOV.CO",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "auth_status",
+              "value": "AUTHENTICATED"
+            },
+            {
+              "name": "auth_token",
+              "value": "mock-oauth-token"
+            }
+          ]
+        }
+      },
+      "id": "auth-mock",
+      "name": "Mock - GOV.CO ID-Gob",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "wait-id",
+      "name": "Wait 1s - Registraduría",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "identidad_validada",
+              "value": true
+            }
+          ]
+        }
+      },
+      "id": "id-mock",
+      "name": "Mock - Verificación Identidad",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        50,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "wait-clas",
+      "name": "Wait 1s - Clasificación Delito",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "tipo_delito",
+              "value": "HURTO"
+            },
+            {
+              "name": "prioridad",
+              "value": "MEDIA"
+            }
+          ]
+        }
+      },
+      "id": "clas-mock",
+      "name": "Mock - Policía Nacional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "wait-spoa",
+      "name": "Wait 1s - Fiscalía SPOA",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "numero_noticia_criminal",
+              "value": "={{ 'NC-' + $json.denuncia_id }}"
+            }
+          ]
+        }
+      },
+      "id": "spoa-mock",
+      "name": "Mock - Registro SPOA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "wait-geo",
+      "name": "Wait 1s - Geocodificación",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "uri_territorial",
+              "value": "BOGOTA-DC"
+            }
+          ]
+        }
+      },
+      "id": "geo-mock",
+      "name": "Mock - Servicios Geoespaciales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "wait-mail",
+      "name": "Wait 1s - Notificación",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "notification_status",
+              "value": "SENT"
+            }
+          ]
+        }
+      },
+      "id": "mail-mock",
+      "name": "Mock - Correo Institucional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      },
+      "id": "end-1",
+      "name": "t1 + latencia",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "respond-1",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2550,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Registro Denuncia": {
+      "main": [
+        [
+          {
+            "node": "Init + t0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init + t0": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Autenticación GOV.CO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Autenticación GOV.CO": {
+      "main": [
+        [
+          {
+            "node": "Mock - GOV.CO ID-Gob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - GOV.CO ID-Gob": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Registraduría",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Registraduría": {
+      "main": [
+        [
+          {
+            "node": "Mock - Verificación Identidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Verificación Identidad": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Clasificación Delito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Clasificación Delito": {
+      "main": [
+        [
+          {
+            "node": "Mock - Policía Nacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Policía Nacional": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Fiscalía SPOA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Fiscalía SPOA": {
+      "main": [
+        [
+          {
+            "node": "Mock - Registro SPOA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Registro SPOA": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Geocodificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Geocodificación": {
+      "main": [
+        [
+          {
+            "node": "Mock - Servicios Geoespaciales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Servicios Geoespaciales": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Notificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Notificación": {
+      "main": [
+        [
+          {
+            "node": "Mock - Correo Institucional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Correo Institucional": {
+      "main": [
+        [
+          {
+            "node": "t1 + latencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

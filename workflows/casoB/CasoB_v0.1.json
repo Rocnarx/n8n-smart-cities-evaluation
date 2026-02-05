@@ -1,0 +1,316 @@
+{
+  "name": "CASO B - Denuncia Digital (Mock, 1s por servicio)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoB-denuncia-digital",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook_CasoB",
+      "name": "Webhook - Registro de denuncia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 320]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "case_id", "value": "={{ $json.body?.case_id || $json.case_id || ('CASE-' + $execution.id) }}" },
+            { "name": "citizen_id", "value": "={{ $json.body?.citizen_id || $json.citizen_id || 'CC-0000000000' }}" },
+            { "name": "crime_type", "value": "={{ ($json.body?.crime_type || $json.crime_type || 'THEFT').toString().toUpperCase() }}" },
+            { "name": "address", "value": "={{ $json.body?.address || $json.address || 'Bogotá, Colombia' }}" },
+            { "name": "id_token", "value": "={{ $json.body?.id_token || $json.id_token || 'VALID_TOKEN' }}" },
+            { "name": "start_time", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Init",
+      "name": "Init + t0 (normalización)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [520, 320]
+    },
+
+    {
+      "parameters": { "waitAmount": 1, "waitUnit": "seconds" },
+      "id": "Wait_GOVCO",
+      "name": "Wait - GOV.CO Auth (1s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [760, 180]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "boolean": [
+            { "name": "auth_ok", "value": "={{ $json.id_token === 'VALID_TOKEN' }}" }
+          ],
+          "string": [
+            { "name": "auth_provider", "value": "GOV.CO (OIDC mock)" },
+            { "name": "auth_time", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_GOVCO",
+      "name": "Mock - Token OAuth2/OIDC",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [980, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.auth_ok }}", "operation": "isTrue" }
+          ]
+        }
+      },
+      "id": "IF_AuthOk",
+      "name": "IF - Autenticación OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, 180]
+    },
+
+    {
+      "parameters": { "waitAmount": 1, "waitUnit": "seconds" },
+      "id": "Wait_Registraduria",
+      "name": "Wait - Registraduría (1s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1420, 80]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "boolean": [
+            { "name": "identity_ok", "value": "={{ ($json.body?.identity_ok ?? $json.identity_ok ?? true) === true }}" }
+          ],
+          "string": [
+            { "name": "identity_time", "value": "={{ $now.toISO() }}" },
+            { "name": "identity_source", "value": "REGISTRADURIA (mock)" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Registraduria",
+      "name": "Mock - Verificación de identidad",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1640, 80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.identity_ok }}", "operation": "isTrue" }
+          ]
+        }
+      },
+      "id": "IF_IdentityOk",
+      "name": "IF - Identidad OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1860, 80]
+    },
+
+    {
+      "parameters": { "waitAmount": 1, "waitUnit": "seconds" },
+      "id": "Wait_Policia",
+      "name": "Wait - Policía (1s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2080, 40]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            { "name": "crime_category", "value": "={{ (['THEFT','ROBBERY','FRAUD','ASSAULT'].includes($json.crime_type)) ? $json.crime_type : 'OTHER' }}" },
+            { "name": "police_time", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Policia",
+      "name": "Mock - Clasificación inicial (Policía)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [2300, 40]
+    },
+
+    {
+      "parameters": { "waitAmount": 1, "waitUnit": "seconds" },
+      "id": "Wait_Fiscalia",
+      "name": "Wait - Fiscalía (1s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2520, 40]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            { "name": "criminal_report_number", "value": "={{ 'NC-' + $json.case_id }}" },
+            { "name": "fiscalia_status", "value": "REGISTERED" },
+            { "name": "fiscalia_time", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Fiscalia",
+      "name": "Mock - Registro formal (Fiscalía)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [2740, 40]
+    },
+
+    {
+      "parameters": { "waitAmount": 1, "waitUnit": "seconds" },
+      "id": "Wait_Geo",
+      "name": "Wait - Geocodificación (1s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2960, 40]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "number": [
+            { "name": "geo_lat", "value": "={{ Number($json.body?.geo_lat || $json.geo_lat || 4.7110) }}" },
+            { "name": "geo_lng", "value": "={{ Number($json.body?.geo_lng || $json.geo_lng || -74.0721) }}" }
+          ],
+          "string": [
+            { "name": "territorial_uri", "value": "={{ 'govco://territory/bogota' }}" },
+            { "name": "geo_time", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Geo",
+      "name": "Mock - Servicios geoespaciales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [3180, 40]
+    },
+
+    {
+      "parameters": { "waitAmount": 1, "waitUnit": "seconds" },
+      "id": "Wait_Notify",
+      "name": "Wait - Notificación (1s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [3400, 40]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            { "name": "notification_status", "value": "SENT" },
+            { "name": "notification_time", "value": "={{ $now.toISO() }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Notify",
+      "name": "Mock - Correo transaccional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [3620, 40]
+    },
+
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [{ "name": "end_time", "value": "={{ $now.toISO() }}" }],
+          "number": [{ "name": "latency_ms", "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}" }]
+        },
+        "options": {}
+      },
+      "id": "Set_End_Success",
+      "name": "t1 + latencia (éxito)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [3840, 40]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "status", "value": "ok" },
+            { "name": "case_id", "value": "={{ $json.case_id }}" },
+            { "name": "citizen_id", "value": "={{ $json.citizen_id }}" },
+            { "name": "crime_type", "value": "={{ $json.crime_type }}" },
+            { "name": "crime_category", "value": "={{ $json.crime_category }}" },
+            { "name": "criminal_report_number", "value": "={{ $json.criminal_report_number }}" },
+            { "name": "territorial_uri", "value": "={{ $json.territorial_uri }}" },
+            { "name": "notification_status", "value": "={{ $json.notification_status }}" },
+            { "name": "start_time", "value": "={{ $json.start_time }}" },
+            { "name": "end_time", "value": "={{ $json.end_time }}" }
+          ],
+          "number": [
+            { "name": "geo_lat", "value": "={{ $json.geo_lat }}" },
+            { "name": "geo_lng", "value": "={{ $json.geo_lng }}" },
+            { "name": "latency_ms", "value": "={{ $json.latency_ms }}" }
+          ],
+          "boolean": [
+            { "name": "auth_ok", "value": "={{ $json.auth_ok }}" },
+            { "name": "identity_ok", "value": "={{ $json.identity_ok }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Response_Success",
+      "name": "Build Response (éxito)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [4060, 40]
+    },
+    {
+      "parameters": { "respondWith": "firstIncomingItem", "responseCode": 200, "options": {} },
+      "id": "Respond_Success",
+      "name": "Respond to Webhook (éxito)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [4280, 40]
+    }
+  ],
+  "connections": {
+    "Webhook - Registro de denuncia": { "main": [[{ "node": "Init + t0 (normalización)", "type": "main", "index": 0 }]] },
+    "Init + t0 (normalización)": { "main": [[{ "node": "Wait - GOV.CO Auth (1s)", "type": "main", "index": 0 }]] },
+    "Wait - GOV.CO Auth (1s)": { "main": [[{ "node": "Mock - Token OAuth2/OIDC", "type": "main", "index": 0 }]] },
+    "Mock - Token OAuth2/OIDC": { "main": [[{ "node": "IF - Autenticación OK?", "type": "main", "index": 0 }]] },
+
+    "IF - Autenticación OK?": { "main": [[{ "node": "Wait - Registraduría (1s)", "type": "main", "index": 0 }], []] },
+    "Wait - Registraduría (1s)": { "main": [[{ "node": "Mock - Verificación de identidad", "type": "main", "index": 0 }]] },
+    "Mock - Verificación de identidad": { "main": [[{ "node": "IF - Identidad OK?", "type": "main", "index": 0 }]] },
+
+    "IF - Identidad OK?": { "main": [[{ "node": "Wait - Policía (1s)", "type": "main", "index": 0 }], []] },
+    "Wait - Policía (1s)": { "main": [[{ "node": "Mock - Clasificación inicial (Policía)", "type": "main", "index": 0 }]] },
+    "Mock - Clasificación inicial (Policía)": { "main": [[{ "node": "Wait - Fiscalía (1s)", "type": "main", "index": 0 }]] },
+    "Wait - Fiscalía (1s)": { "main": [[{ "node": "Mock - Registro formal (Fiscalía)", "type": "main", "index": 0 }]] },
+    "Mock - Registro formal (Fiscalía)": { "main": [[{ "node": "Wait - Geocodificación (1s)", "type": "main", "index": 0 }]] },
+    "Wait - Geocodificación (1s)": { "main": [[{ "node": "Mock - Servicios geoespaciales", "type": "main", "index": 0 }]] },
+    "Mock - Servicios geoespaciales": { "main": [[{ "node": "Wait - Notificación (1s)", "type": "main", "index": 0 }]] },
+    "Wait - Notificación (1s)": { "main": [[{ "node": "Mock - Correo transaccional", "type": "main", "index": 0 }]] },
+    "Mock - Correo transaccional": { "main": [[{ "node": "t1 + latencia (éxito)", "type": "main", "index": 0 }]] },
+    "t1 + latencia (éxito)": { "main": [[{ "node": "Build Response (éxito)", "type": "main", "index": 0 }]] },
+    "Build Response (éxito)": { "main": [[{ "node": "Respond to Webhook (éxito)", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

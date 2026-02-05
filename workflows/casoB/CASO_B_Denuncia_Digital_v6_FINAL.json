@@ -1,0 +1,657 @@
+{
+  "name": "CASO B - Denuncia Digital FULL FINAL (v6 respuestas diferenciadas)",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Webhook - Registro Denuncia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoB-denuncia-digital-full",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "init",
+      "name": "Init + t0 (normalización)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -1400,
+        300
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "denuncia_id",
+              "value": "={{ $uuid }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "ciudadano_id",
+              "value": "={{ $json.body?.ciudadano_id }}"
+            },
+            {
+              "name": "descripcion",
+              "value": "={{ $json.body?.descripcion }}"
+            },
+            {
+              "name": "force_auth_fail",
+              "value": "={{ $json.body?.force_auth_fail === true }}"
+            },
+            {
+              "name": "force_id_fail",
+              "value": "={{ $json.body?.force_id_fail === true }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-auth",
+      "name": "Wait 1s - ID-Gob",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-auth",
+      "name": "Mock - Autenticación GOV.CO",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -1020,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "auth_status",
+              "value": "={{ $json.force_auth_fail ? 'FAILED' : 'AUTHENTICATED' }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "if-auth",
+      "name": "IF - ¿Autenticado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -840,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.auth_status }}",
+              "operation": "equals",
+              "value2": "AUTHENTICATED"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "build-auth-reject",
+      "name": "Build Response - No Autenticado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -840,
+        520
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "http_code",
+              "value": "401"
+            },
+            {
+              "name": "error_code",
+              "value": "AUTH_001"
+            },
+            {
+              "name": "reason",
+              "value": "USER_NOT_AUTHENTICATED"
+            },
+            {
+              "name": "message",
+              "value": "El usuario no está autenticado en GOV.CO"
+            },
+            {
+              "name": "service",
+              "value": "ID_GOB"
+            },
+            {
+              "name": "denuncia_id",
+              "value": "={{ $json.denuncia_id }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-id",
+      "name": "Wait 1s - Registraduría",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-id",
+      "name": "Mock - Verificación Identidad",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "identidad_validada",
+              "value": "={{ !$json.force_id_fail }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "if-id",
+      "name": "IF - ¿Identidad válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.identidad_validada }}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "build-id-reject",
+      "name": "Build Response - Identidad Invalida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        520
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "http_code",
+              "value": "422"
+            },
+            {
+              "name": "error_code",
+              "value": "ID_002"
+            },
+            {
+              "name": "reason",
+              "value": "IDENTITY_NOT_VALID"
+            },
+            {
+              "name": "message",
+              "value": "La identidad del ciudadano no pudo ser validada"
+            },
+            {
+              "name": "service",
+              "value": "REGISTRADURIA"
+            },
+            {
+              "name": "denuncia_id",
+              "value": "={{ $json.denuncia_id }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-police",
+      "name": "Wait 1s - Policía Nacional",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-police",
+      "name": "Mock - Policía (Clasificación Delito)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        140,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "tipo_delito",
+              "value": "HURTO"
+            },
+            {
+              "name": "prioridad",
+              "value": "MEDIA"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-fiscalia",
+      "name": "Wait 1s - Fiscalía SPOA",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        340,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-fiscalia",
+      "name": "Mock - Registro SPOA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "numero_noticia_criminal",
+              "value": "={{ 'NC-' + $json.denuncia_id }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-geo",
+      "name": "Wait 1s - Geocodificación",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "mock-geo",
+      "name": "Mock - Servicios Geoespaciales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "uri_territorial",
+              "value": "BOGOTA-DC"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wait-notify",
+      "name": "Wait 1s - Notificación",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "build-ok",
+      "name": "Build Response - Caso Aprobado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "approved"
+            },
+            {
+              "name": "http_code",
+              "value": "201"
+            },
+            {
+              "name": "message",
+              "value": "Denuncia registrada correctamente"
+            },
+            {
+              "name": "denuncia_id",
+              "value": "={{ $json.denuncia_id }}"
+            },
+            {
+              "name": "numero_noticia_criminal",
+              "value": "={{ $json.numero_noticia_criminal }}"
+            },
+            {
+              "name": "uri_territorial",
+              "value": "={{ $json.uri_territorial }}"
+            },
+            {
+              "name": "services_executed",
+              "value": "ID_GOB, REGISTRADURIA, POLICIA, FISCALIA, GEO, NOTIFICACION"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($json.start_time).getTime() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Registro Denuncia": {
+      "main": [
+        [
+          {
+            "node": "Init + t0 (normalización)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Init + t0 (normalización)": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - ID-Gob",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - ID-Gob": {
+      "main": [
+        [
+          {
+            "node": "Mock - Autenticación GOV.CO",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - Autenticación GOV.CO": {
+      "main": [
+        [
+          {
+            "node": "IF - ¿Autenticado?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IF - ¿Autenticado?": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Registraduría",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "node": "Build Response - No Autenticado",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Build Response - No Autenticado": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Registraduría": {
+      "main": [
+        [
+          {
+            "node": "Mock - Verificación Identidad",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - Verificación Identidad": {
+      "main": [
+        [
+          {
+            "node": "IF - ¿Identidad válida?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IF - ¿Identidad válida?": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Policía Nacional",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "node": "Build Response - Identidad Invalida",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Build Response - Identidad Invalida": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Policía Nacional": {
+      "main": [
+        [
+          {
+            "node": "Mock - Policía (Clasificación Delito)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - Policía (Clasificación Delito)": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Fiscalía SPOA",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Fiscalía SPOA": {
+      "main": [
+        [
+          {
+            "node": "Mock - Registro SPOA",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - Registro SPOA": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Geocodificación",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Geocodificación": {
+      "main": [
+        [
+          {
+            "node": "Mock - Servicios Geoespaciales",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mock - Servicios Geoespaciales": {
+      "main": [
+        [
+          {
+            "node": "Wait 1s - Notificación",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Wait 1s - Notificación": {
+      "main": [
+        [
+          {
+            "node": "Build Response - Caso Aprobado",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Build Response - Caso Aprobado": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  }
+}
