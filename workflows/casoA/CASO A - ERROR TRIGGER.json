@@ -1,0 +1,247 @@
+{
+  "name": "CASO A - Dead Letter Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e44ee874-6049-47c5-b7c7-49565fa2713a",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "workflow_name",
+              "value": "={{ $json.workflow?.name || '' }}"
+            },
+            {
+              "name": "execution_id",
+              "value": "={{ $json.execution?.id || '' }}"
+            },
+            {
+              "name": "execution_url",
+              "value": "={{ $json.execution?.url || '' }}"
+            },
+            {
+              "name": "retry_of",
+              "value": "={{ $json.execution?.retryOf || '' }}"
+            },
+            {
+              "name": "last_node_executed",
+              "value": "={{ $json.execution?.lastNodeExecuted || '' }}"
+            },
+            {
+              "name": "error_message",
+              "value": "={{ $json.execution?.error?.message || $json.trigger?.error?.message || '' }}"
+            },
+            {
+              "name": "error_stack",
+              "value": "={{ $json.execution?.error?.stack || $json.trigger?.error?.stack || '' }}"
+            },
+            {
+              "name": "execution_mode",
+              "value": "={{ $json.execution?.mode || $json.trigger?.mode || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "41280d47-a260-4c18-9333-6704b01827fa",
+      "name": "Set - Normalize Dead Letter",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_a_dead_letter",
+          "mode": "list",
+          "cachedResultName": "case_a_dead_letter"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "workflow_name",
+              "displayName": "workflow_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_url",
+              "displayName": "execution_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "retry_of",
+              "displayName": "retry_of",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_node_executed",
+              "displayName": "last_node_executed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error_stack",
+              "displayName": "error_stack",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_mode",
+              "displayName": "execution_mode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "4a340eac-38c9-4aa5-86f4-f6efea90793e",
+      "name": "Insert Dead Letter",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        544,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ztVYZet2Eox72Jhm",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Normalize Dead Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Normalize Dead Letter": {
+      "main": [
+        [
+          {
+            "node": "Insert Dead Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "cffa2480-3cb5-4d35-be00-2aa7bf976326",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ab74ba8dc44e84679270e2291a6cad4bb7aa9e2232c851e17911f86a373f59b"
+  },
+  "id": "VTJguDuGGEd7jdgDG_ffl",
+  "tags": []
+}

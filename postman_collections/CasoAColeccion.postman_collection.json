@@ -1,0 +1,590 @@
+{
+  "info": {
+    "name": "n8n E2E - Recarga Tullave",
+    "_postman_id": "bf49a4d8-2ff2-4419-8c60-7e093b06a538",
+    "description": "Colección Postman para probar el flujo end-to-end de n8n con mocks FastAPI.\n\nImporta también el environment adjunto.\nPor defecto n8n_webhook_url apunta a /webhook-test y mock_base_url a http://host.docker.internal:8000.\nSi activas/publicas el workflow, cambia n8n_webhook_url por n8n_webhook_url_prod.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "n8n_webhook_url",
+      "value": "http://localhost:5678/webhook-test/casoA-recarga-tullave-v2",
+      "type": "string"
+    },
+    {
+      "key": "n8n_webhook_url_prod",
+      "value": "http://localhost:5678/webhook/casoA-recarga-tullave-v2",
+      "type": "string"
+    },
+    {
+      "key": "mock_base_url",
+      "value": "http://host.docker.internal:8000",
+      "type": "string"
+    },
+    {
+      "key": "cid",
+      "value": "test-correlation-001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "E2E - n8n Webhook",
+      "description": "Requests end-to-end contra el webhook de n8n. Por defecto usan la URL de prueba.",
+      "item": [
+        {
+          "name": "E2E 01 - Éxito completo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-ok-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Camino feliz completo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 02 - Pago no aprobado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-payment-rejected-001\",\n  \"payment_status\": \"REJECTED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Se corta antes de validar fondos."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 03 - Fondos insuficientes por saldo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-funds-low-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 30000,\n  \"account_balance\": 10000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "La validación de fondos debe devolver false."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 04 - Fondos insuficientes forzados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-funds-force-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_insufficient\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Fuerza insuficiencia aun con saldo suficiente."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 05 - Rechazo bancario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-bank-reject-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_bank_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "El webhook sigue, pero bank_confirmation_status debe salir REJECTED."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 06 - Rechazo de recaudo Bogotá",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-recaudo-reject-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_recaudo_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Prueba rechazo en recaudo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 07 - Falla activación Tullave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-tullave-reject-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_tullave_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Prueba activación rechazada."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 08 - Rechazo de reporte DIAN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-dian-reject-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_dian_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Prueba rechazo en el reporte final."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 09 - Falla de notificación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-notify-reject-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_notify_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Prueba el último paso de notificación."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 10 - Error técnico global",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-tech-error-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"force_error\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "La bandera se propaga y normalmente rompe en la primera llamada HTTP a los mocks."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 11 - Latencia simulada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-latency-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"delay_ms\": 300,\n  \"jitter_ms\": 700\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Permite medir el tiempo total del flujo con latencia artificial."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 12 - Canal SMS en notificación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url}}\",\n  \"transaction_id\": \"tx-e2e-notify-sms-001\",\n  \"payment_status\": \"APPROVED\",\n  \"amount\": 12000,\n  \"account_balance\": 50000,\n  \"channel\": \"SMS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url}}",
+            "description": "Prueba cambio de canal que el mock de notify también acepta."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

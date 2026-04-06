@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:15
@@ -9,13 +7,42 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  redis:
-    image: redis:7
-    container_name: n8n-redis
+  casea-mock-api:
+    build: ../caseA_mock_api
+    container_name: casea-mock-api
     restart: always
+    ports:
+      - "8001:8001"  # opcional (solo si quieres pegarle desde tu PC)
+    environment:
+      MIN_DELAY_MS: 0
+      MAX_DELAY_MS: 0
+      FAIL_RATE: 0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  caseb-mock-api:
+    build: ../caseB_mock_api
+    container_name: caseb-mock-api
+    restart: always
+    ports:
+      - "8002:8002"  # opcional (solo si quieres pegarle desde tu PC)
+    environment:
+      MIN_DELAY_MS: 0
+      MAX_DELAY_MS: 0
+      FAIL_RATE: 0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   n8n:
     image: n8nio/n8n:latest
@@ -38,15 +65,31 @@ services:
       N8N_PORT: ${N8N_PORT}
       N8N_PROTOCOL: ${N8N_PROTOCOL}
 
-      QUEUE_BULL_REDIS_HOST: redis
-      QUEUE_BULL_REDIS_PORT: ${REDIS_PORT}
+
       EXECUTIONS_MODE: regular
     depends_on:
       - postgres
-      - redis
+      - casea-mock-api
+      - caseb-mock-api
     volumes:
       - n8n_data:/home/node/.n8n
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase_app
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${POSTGRES_USER}
+      MB_DB_PASS: ${POSTGRES_PASSWORD}
+      MB_DB_HOST: postgres
 
 volumes:
   postgres_data:
   n8n_data:
+  metabase_data:

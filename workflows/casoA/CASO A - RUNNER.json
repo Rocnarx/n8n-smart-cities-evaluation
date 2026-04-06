@@ -1,0 +1,198 @@
+{
+  "name": "Runner - Caso A Batch interno",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "8dfca0e2-c0e5-45e0-8b27-ad93fe4d82ed",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "webhook_url",
+              "value": "http://localhost:5678/webhook-test/casoA-recarga-tullave-v2"
+            },
+            {
+              "name": "mock_base_url",
+              "value": "http://casea-mock-api:8001"
+            },
+            {
+              "name": "channel",
+              "value": "EMAIL"
+            }
+          ],
+          "number": [
+            {
+              "name": "success_count",
+              "value": 30
+            },
+            {
+              "name": "payment_rejected_count",
+              "value": 10
+            },
+            {
+              "name": "insufficient_balance_count",
+              "value": 10
+            },
+            {
+              "name": "insufficient_forced_count",
+              "value": 5
+            },
+            {
+              "name": "bank_reject_count",
+              "value": 5
+            },
+            {
+              "name": "recaudo_reject_count",
+              "value": 5
+            },
+            {
+              "name": "tullave_reject_count",
+              "value": 5
+            },
+            {
+              "name": "dian_reject_count",
+              "value": 5
+            },
+            {
+              "name": "notify_reject_count",
+              "value": 5
+            },
+            {
+              "name": "latency_count",
+              "value": 10
+            },
+            {
+              "name": "delay_ms",
+              "value": 250
+            },
+            {
+              "name": "jitter_ms",
+              "value": 75
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1eac7dae-e9ef-464a-8cc8-a6ca1e808ac0",
+      "name": "Set - Runner Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $input.first().json;\nconst now = Date.now();\nconst items = [];\n\nconst addCases = (scenario, count, extra = {}) => {\n  for (let i = 0; i < Number(count || 0); i++) {\n    items.push({\n      json: {\n        webhook_url: cfg.webhook_url,\n        mock_base_url: cfg.mock_base_url,\n        channel: cfg.channel || 'EMAIL',\n        scenario,\n        transaction_id: `tx-${scenario}-${now}-${String(i + 1).padStart(3, '0')}`,\n        amount: 12000,\n        account_balance: 50000,\n        payment_status: 'APPROVED',\n        force_insufficient: false,\n        force_bank_reject: false,\n        force_recaudo_reject: false,\n        force_tullave_reject: false,\n        force_dian_reject: false,\n        force_notify_reject: false,\n        delay_ms: 0,\n        jitter_ms: 0,\n        ...extra,\n      },\n    });\n  }\n};\n\naddCases('success', cfg.success_count);\naddCases('payment_rejected', cfg.payment_rejected_count, {\n  payment_status: 'REJECTED',\n});\naddCases('insufficient_balance', cfg.insufficient_balance_count, {\n  account_balance: 5000,\n});\naddCases('insufficient_forced', cfg.insufficient_forced_count, {\n  force_insufficient: true,\n});\naddCases('bank_reject', cfg.bank_reject_count, {\n  force_bank_reject: true,\n});\naddCases('recaudo_reject', cfg.recaudo_reject_count, {\n  force_recaudo_reject: true,\n});\naddCases('tullave_reject', cfg.tullave_reject_count, {\n  force_tullave_reject: true,\n});\naddCases('dian_reject', cfg.dian_reject_count, {\n  force_dian_reject: true,\n});\naddCases('notify_reject', cfg.notify_reject_count, {\n  force_notify_reject: true,\n});\naddCases('latency_simulated', cfg.latency_count, {\n  delay_ms: Number(cfg.delay_ms || 250),\n  jitter_ms: Number(cfg.jitter_ms || 75),\n});\n\nreturn items;"
+      },
+      "id": "1d899153-3e75-409b-b04c-1b9479b75090",
+      "name": "Code - Build Test Cases",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.webhook_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  payment_status: $json.payment_status,\n  mock_base_url: $json.mock_base_url,\n  channel: $json.channel,\n  delay_ms: $json.delay_ms,\n  jitter_ms: $json.jitter_ms,\n  force_insufficient: $json.force_insufficient,\n  force_bank_reject: $json.force_bank_reject,\n  force_recaudo_reject: $json.force_recaudo_reject,\n  force_tullave_reject: $json.force_tullave_reject,\n  force_dian_reject: $json.force_dian_reject,\n  force_notify_reject: $json.force_notify_reject\n} }}",
+        "options": {}
+      },
+      "id": "c80ac55e-4632-4654-b058-24edc9a8c934",
+      "name": "HTTP - Trigger Caso A",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\nconst byStatus = {};\nconst byReason = {};\n\nfor (const row of rows) {\n  const status = row.status || 'unknown';\n  const reason = row.fail_reason || '(none)';\n  byStatus[status] = (byStatus[status] || 0) + 1;\n  byReason[reason] = (byReason[reason] || 0) + 1;\n}\n\nreturn [\n  {\n    json: {\n      total_requests: rows.length,\n      by_status: byStatus,\n      by_fail_reason: byReason,\n      sample: rows.slice(0, 5),\n    },\n  },\n];"
+      },
+      "id": "06fe7237-42c7-4c9c-b148-c1b374ecb0c2",
+      "name": "Code - Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -272
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Runner Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Runner Config": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Test Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Test Cases": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Trigger Caso A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Trigger Caso A": {
+      "main": [
+        [
+          {
+            "node": "Code - Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "79521986-630e-4e03-9405-c387c4277591",
+  "meta": {
+    "instanceId": "4ab74ba8dc44e84679270e2291a6cad4bb7aa9e2232c851e17911f86a373f59b"
+  },
+  "id": "3SJAn5mvG4IkPuKUiTYmv",
+  "tags": []
+}

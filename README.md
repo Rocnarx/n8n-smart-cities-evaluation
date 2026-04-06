@@ -1,218 +1,454 @@
 # Evaluación de n8n como plataforma de integración (EAI) para ciudades inteligentes
-# Evaluation of n8n as an integration platform (EAI) for smart cities
+
+## Descripción general
+
+Este repositorio contiene la infraestructura experimental y los artefactos utilizados para evaluar **n8n** como plataforma de integración **EAI** en un escenario de **ciudades inteligentes**.
+
+El caso principal implementado actualmente es el **Caso A – Recarga Tullave**, compuesto por:
+
+- un **workflow n8n** que orquesta el proceso de extremo a extremo,
+- una **API mock en FastAPI** que simula sistemas externos,
+- artefactos de prueba para **Postman**,
+- documentación técnica de apoyo.
+
+El objetivo del proyecto es generar evidencia reproducible sobre:
+
+- latencia E2E,
+- interoperabilidad mediante APIs,
+- tolerancia a fallos,
+- viabilidad de despliegue local,
+- sostenibilidad operativa.
 
 ---
 
-## 🇪🇸 Español
+## Contenido principal del proyecto
 
-### Descripción general
-
-Este repositorio contiene la **infraestructura experimental**, los **casos de estudio** y los **artefactos de medición** utilizados para evaluar **n8n** como una **capa de Enterprise Application Integration (EAI)** orientada a eventos en el contexto de **ciudades inteligentes**.
-
-El objetivo principal es generar **evidencia técnica reproducible** sobre la idoneidad y la sostenibilidad operativa de una plataforma *low-code, open-source y self-hosted* para la integración de servicios digitales urbanos.
-
----
-
-### 🎯 Objetivo del repositorio
-
-Este repositorio permite:
-
-- Desplegar un entorno **self-hosted reproducible** de n8n mediante Docker.
-- Implementar **casos de estudio representativos** de servicios urbanos.
-- Ejecutar **experimentos controlados** para medir:
-  - Latencia de extremo a extremo (E2E)
-  - Tolerancia a fallos y recuperación automática
-  - Interoperabilidad mediante APIs
-  - Consumo de recursos
-  - Sostenibilidad operativa
-- Visualizar métricas mediante un **dashboard experimental**.
-
-El diseño del repositorio prioriza la **replicabilidad, trazabilidad y auditabilidad**, alineado con buenas prácticas académicas y de arquitectura de software.
+- `docker-compose.yml`: despliegue base de n8n, PostgreSQL, Redis y la API mock.
+- `main.py`: API mock del Caso A con endpoints simulados y latencia configurable.
+- `CASO_A_Recarga_Tullave_endpoints_simulados_corregido.json`: workflow de n8n corregido para consumir los endpoints simulados.
+- `Postman_E2E_Recarga_Tullave.postman_collection.json`: colección Postman para pruebas end-to-end.
+- `Postman_E2E_Recarga_Tullave.postman_environment.json`: environment de Postman con variables base.
+- `Documento_tecnico_n8n_API_mock_Caso_A.docx`: documento técnico del prototipo.
 
 ---
 
-### 🧠 Contexto académico
+## Requerimientos
 
-Proyecto de grado – Ingeniería de Sistemas  
-Universidad Distrital Francisco José de Caldas  
+### Opción A: ejecución completa con Docker
 
-**Tema:**  
-Evaluación de n8n como herramienta de integración de servicios digitales en el contexto de ciudades inteligentes.
+Necesitas tener instalado:
 
-El estudio **no busca comparar múltiples herramientas**, sino analizar **bajo qué condiciones técnicas y operativas** n8n cumple los requisitos mínimos de una EAI moderna en escenarios urbanos.
+- **Docker** 24 o superior
+- **Docker Compose** (plugin `docker compose`)
 
----
+### Opción B: n8n en Docker + API mock local
 
-### 🏗️ Arquitectura general (alto nivel)
+Necesitas tener instalado:
 
-- n8n como **capa central de orquestación**
-- Integración basada en:
-  - Eventos (webhooks)
-  - APIs REST
-  - Flujos declarativos
-- Ejecución en **queue mode** con workers
-- Observabilidad mediante métricas y logs
-- Despliegue completamente **self-hosted**
+- **Docker**
+- **Docker Compose**
+- **Python 3.10+**
+- **pip**
 
-La arquitectura detallada se documenta en `docs/architecture.md`.
+### Herramientas recomendadas
+
+- **Postman** para pruebas manuales
+- **cURL** para pruebas rápidas
 
 ---
 
-### 📁 Estructura del repositorio
+## Arquitectura resumida
 
+El flujo del **Caso A – Recarga Tullave** sigue esta secuencia:
+
+1. Un cliente envía un evento de pago al **webhook de n8n**.
+2. n8n valida el estado del pago.
+3. n8n consulta la API mock para validar fondos.
+4. Si hay fondos, n8n llama secuencialmente a:
+   - confirmación bancaria,
+   - recaudo Bogotá,
+   - activación Tullave,
+   - reporte a DIAN,
+   - notificación por correo.
+5. n8n devuelve una respuesta consolidada con el resultado del flujo y la latencia E2E.
+
+---
+
+## Endpoints de la API mock
+
+La API mock expone los siguientes endpoints:
+
+### GET
+
+- `/health`
+
+### POST
+
+- `/funds/validate`
+- `/bank/confirm`
+- `/recaudo/bogota`
+- `/tullave/activate`
+- `/dian/report`
+- `/notify/email`
+
+Todos los endpoints POST aceptan un cuerpo JSON basado en:
+
+```json
+{
+  "transaction_id": "tx-001",
+  "amount": 12000,
+  "account_balance": 50000,
+  "delay_ms": 0,
+  "jitter_ms": 0,
+  "fail_rate": 0,
+  "force_error": false
+}
 ```
-n8n-smart-cities-evaluation/
-├── infra/                  # Infraestructura (Docker, variables de entorno)
-│   ├── docker-compose.yml
-│   └── .env.example
-│
-├── workflows/              # Flujos n8n exportables (.json)
-│   ├── casoA/
-│   └── casoB/
-│
-├── metrics/                # Observabilidad
-│   ├── prometheus/
-│   └── grafana/
-│
-├── experiments/            # Experimentos controlados
-│   ├── load-tests/
-│   └── fault-injection/
-│
-├── docs/                   # Documentación técnica
-│   ├── architecture.md
-│   └── methodology.md
-│
-├── README.md
-└── .gitignore
+
+Algunos endpoints además aceptan banderas de negocio como:
+
+- `force_insufficient`
+- `force_reject`
+- `channel`
+
+---
+
+## Variables de entorno necesarias
+
+Debes definir estas variables:
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `POSTGRES_DB` | Nombre de la base de datos de n8n | `n8n` |
+| `POSTGRES_USER` | Usuario de PostgreSQL | `n8n` |
+| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `n8npass` |
+| `N8N_BASIC_AUTH_ACTIVE` | Activa autenticación básica | `true` |
+| `N8N_BASIC_AUTH_USER` | Usuario de acceso a n8n | `admin` |
+| `N8N_BASIC_AUTH_PASSWORD` | Contraseña de acceso a n8n | `admin123` |
+| `N8N_HOST` | Host público de n8n | `localhost` |
+| `N8N_PORT` | Puerto de n8n | `5678` |
+| `N8N_PROTOCOL` | Protocolo | `http` |
+| `REDIS_PORT` | Puerto de Redis | `6379` |
+
+### Ejemplo de archivo `.env`
+
+```env
+POSTGRES_DB=n8n
+POSTGRES_USER=n8n
+POSTGRES_PASSWORD=n8npass
+
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=admin123
+
+N8N_HOST=localhost
+N8N_PORT=5678
+N8N_PROTOCOL=http
+
+REDIS_PORT=6379
 ```
 
 ---
 
-### 🧪 Casos de estudio
+## Ejecución del proyecto
 
-**Caso A – Recarga digital**  
-Modelo experimental de un flujo de recarga digital con validaciones, integración vía APIs simuladas, manejo de errores y notificación.
+# 1) Opción A — Todo con Docker
 
-**Caso B – Denuncia digital**  
-Modelo experimental de integración interinstitucional con autenticación simulada, clasificación, enrutamiento y trazabilidad.
+Usa esta opción si quieres levantar:
 
-> ⚠️ Todos los servicios externos son **mocks/simulados**, utilizados únicamente con fines experimentales.
+- PostgreSQL
+- Redis
+- API mock
+- n8n
 
----
+### Paso 1. Crear el archivo `.env`
 
-### 📊 Métricas evaluadas
+Crea un archivo `.env` junto a `docker-compose.yml` con el contenido mostrado arriba.
 
-- Latencia E2E (p50, p95, p99)
-- Tasa de error y recuperación automática
-- Reintentos
-- Uso de CPU y memoria
-- Comportamiento bajo carga
-- Mantenibilidad de flujos
+### Paso 2. Levantar los servicios
 
-La metodología se describe en `docs/methodology.md`.
+```bash
+docker compose up -d --build
+```
 
----
+### Paso 3. Verificar que n8n esté arriba
 
-### 🔁 Reproducibilidad
+Abre en el navegador:
 
-Cualquier evaluador puede:
+```text
+http://localhost:5678
+```
 
-1. Clonar el repositorio  
-2. Levantar el entorno con Docker  
-3. Importar los flujos  
-4. Ejecutar los experimentos  
-5. Validar las métricas  
+### Paso 4. Verificar que la API mock esté arriba
 
----
+Si mantienes el mapeo del compose:
 
-## 🇺🇸 English
+```yaml
+ports:
+  - "8001:8001"
+```
 
-### Overview
+prueba desde tu host:
 
-This repository contains the **experimental infrastructure**, **case studies**, and **measurement artifacts** used to evaluate **n8n** as an **Enterprise Application Integration (EAI)** layer in the context of **smart cities**.
+```bash
+curl http://localhost:8001/health
+```
 
-The main goal is to generate **reproducible technical evidence** regarding the technical suitability and operational sustainability of a *low-code, open-source, self-hosted* platform for urban digital service integration.
+### Paso 5. Importar el workflow en n8n
 
----
+Importa el archivo:
 
-### 🎯 Repository purpose
+```text
+CASO_A_Recarga_Tullave_endpoints_simulados_corregido.json
+```
 
-This repository enables:
+El webhook del caso es:
 
-- Deployment of a **reproducible self-hosted** n8n environment using Docker.
-- Implementation of **representative urban service case studies**.
-- Execution of **controlled experiments** to measure:
-  - End-to-end latency (E2E)
-  - Fault tolerance and automatic recovery
-  - API-based interoperability
-  - Resource consumption
-  - Operational sustainability
-- Visualization of metrics through an **experimental dashboard**.
+```text
+casoA-recarga-tullave-v2
+```
 
-The repository is designed to be **replicable, traceable, and auditable**, aligned with academic and software architecture best practices.
+### Paso 6. Ajustar `mock_base_url`
 
----
+Si **n8n y la API mock están dentro del mismo `docker compose`**, el `mock_base_url` que se debe enviar al webhook debe apuntar al nombre del servicio Docker, no a `localhost`.
 
-### 🧠 Academic context
+Usa algo como:
 
-Undergraduate thesis project – Systems Engineering  
-Universidad Distrital Francisco José de Caldas  
+```text
+http://casea-mock-api:8001
+```
 
-**Topic:**  
-Evaluation of n8n as a digital service integration platform in smart city environments.
+> `localhost` dentro del contenedor de n8n no apunta a tu máquina ni a otros contenedores.
 
-The study **does not aim to compare multiple tools**, but rather to analyze **under which technical and operational conditions** n8n satisfies the requirements of a modern EAI in urban scenarios.
+### Paso 7. Probar el flujo end-to-end
 
----
+Si el workflow está en modo de prueba desde el editor, usa:
 
-### 🏗️ High-level architecture
+```bash
+curl -X POST "http://localhost:5678/webhook-test/casoA-recarga-tullave-v2" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mock_base_url": "http://casea-mock-api:8001",
+    "transaction_id": "tx-e2e-ok-001",
+    "payment_status": "APPROVED",
+    "amount": 12000,
+    "account_balance": 50000
+  }'
+```
 
-- n8n as the **central orchestration layer**
-- Event-driven integration using:
-  - Webhooks
-  - REST APIs
-  - Declarative workflows
-- Execution in **queue mode** with workers
-- Observability via metrics and logs
-- Fully **self-hosted deployment**
+Si el workflow ya está activo, usa:
 
-Detailed architecture is documented in `docs/architecture.md`.
-
----
-
-### 🧪 Case studies
-
-**Case A – Digital recharge integration**  
-Experimental model of a digital recharge workflow including validation, API integration (mocked), error handling, and notification.
-
-**Case B – Digital complaint process**  
-Experimental inter-institutional integration model with simulated authentication, classification, routing, and full traceability.
-
-> ⚠️ All external services are **mocked/simulated** and used strictly for experimental purposes.
+```bash
+curl -X POST "http://localhost:5678/webhook/casoA-recarga-tullave-v2" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mock_base_url": "http://casea-mock-api:8001",
+    "transaction_id": "tx-e2e-ok-001",
+    "payment_status": "APPROVED",
+    "amount": 12000,
+    "account_balance": 50000
+  }'
+```
 
 ---
 
-### 📊 Evaluated metrics
+# 2) Opción B — n8n en Docker + API mock local con Python
 
-- End-to-end latency (p50, p95, p99)
-- Error rate and recovery
-- Automatic retries
-- CPU and memory usage
-- Load behavior
-- Workflow maintainability
+Usa esta opción si quieres correr la API mock fuera de Docker.
 
-Measurement methodology is documented in `docs/methodology.md`.
+### Paso 1. Instalar dependencias de Python
+
+```bash
+pip install fastapi uvicorn pydantic
+```
+
+### Paso 2. Ejecutar la API mock
+
+Desde la carpeta donde está `main.py`:
+
+```bash
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Paso 3. Verificar la API
+
+```bash
+curl http://localhost:8000/health
+```
+
+### Paso 4. Levantar n8n con Docker
+
+```bash
+docker compose up -d postgres redis n8n
+```
+
+### Paso 5. Usar la URL correcta desde n8n hacia tu host
+
+Como n8n está en Docker y la API está en tu máquina host, el `mock_base_url` debe ser:
+
+```text
+http://host.docker.internal:8000
+```
+
+### Paso 6. Probar el flujo E2E
+
+```bash
+curl -X POST "http://localhost:5678/webhook-test/casoA-recarga-tullave-v2" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mock_base_url": "http://host.docker.internal:8000",
+    "transaction_id": "tx-e2e-ok-001",
+    "payment_status": "APPROVED",
+    "amount": 12000,
+    "account_balance": 50000
+  }'
+```
 
 ---
 
-### 📄 License
+## Latencia y fallos simulados
 
-This repository is intended for **academic and experimental use**.  
-Usage of n8n is subject to its corresponding license.
+La API mock permite simular latencia y errores técnicos de manera controlada.
+
+### Parámetros disponibles por request
+
+- `delay_ms`: latencia base fija
+- `jitter_ms`: latencia aleatoria adicional
+- `fail_rate`: probabilidad de fallo técnico entre 0 y 1
+- `force_error`: fuerza un error técnico
+- `force_insufficient`: fuerza rechazo por fondos insuficientes
+- `force_reject`: fuerza rechazo de negocio
+
+### Variables globales del contenedor mock
+
+En Docker Compose aparecen definidas:
+
+```yaml
+environment:
+  MIN_DELAY_MS: 0
+  MAX_DELAY_MS: 0
+  FAIL_RATE: 0
+```
+
+Si quieres latencia aleatoria por defecto, puedes cambiarlo por ejemplo a:
+
+```yaml
+environment:
+  MIN_DELAY_MS: 100
+  MAX_DELAY_MS: 900
+  FAIL_RATE: 0
+```
+
+Así cada servicio simulará una latencia aleatoria incluso si no mandas `delay_ms` en el cuerpo.
 
 ---
 
-### ✍️ Author
+## Pruebas con Postman
 
-Systems Engineering Student  
-Universidad Distrital Francisco José de Caldas
+Importa estos archivos en Postman:
+
+- `Postman_E2E_Recarga_Tullave.postman_collection.json`
+- `Postman_E2E_Recarga_Tullave.postman_environment.json`
+
+### Variables importantes del environment
+
+| Variable | Uso |
+|---|---|
+| `n8n_webhook_url` | URL de prueba (`/webhook-test/...`) |
+| `n8n_webhook_url_prod` | URL productiva (`/webhook/...`) |
+| `mock_base_url` | URL de la API mock |
+| `cid` | Correlation ID para trazabilidad |
+
+### Ajustes recomendados
+
+#### Si usas API local con Python
+
+```text
+mock_base_url = http://host.docker.internal:8000
+```
+
+#### Si usas API mock dentro de Docker Compose
+
+```text
+mock_base_url = http://casea-mock-api:8001
+```
+
+---
+
+## Resultado esperado del flujo
+
+Cuando el flujo es exitoso, la respuesta final consolidada de n8n debe incluir, entre otros:
+
+- `transaction_id`
+- `status`
+- `start_time`
+- `end_time`
+- `latency_ms`
+- datos de fondos
+- confirmación bancaria
+- estado de recaudo
+- activación Tullave
+- reporte DIAN
+- notificación
+
+---
+
+## Errores comunes y solución
+
+### Error: `connect ECONNREFUSED 127.0.0.1:8000`
+
+Causa probable:
+- n8n intenta conectarse a `localhost:8000` desde dentro del contenedor.
+
+Solución:
+- si la API está en tu host: usa `http://host.docker.internal:8000`
+- si la API está en Docker Compose: usa `http://casea-mock-api:8001`
+
+### Error: `The service refused the connection - perhaps it is offline`
+
+Causas probables:
+- el webhook no es correcto,
+- el workflow no está escuchando en modo test,
+- la API mock no está arriba,
+- `mock_base_url` apunta a una URL incorrecta.
+
+### Diferencia entre `/webhook-test/` y `/webhook/`
+
+- Usa `/webhook-test/...` cuando estés probando desde el editor y hayas activado **Listen for test event**.
+- Usa `/webhook/...` cuando el workflow esté activo/publicado.
+
+---
+
+## Métricas soportadas actualmente
+
+Con el estado actual del prototipo ya puedes obtener:
+
+- **latencia E2E** desde n8n,
+- **latencia por servicio** desde la API mock,
+- **rechazos de negocio**,
+- **fallos técnicos controlados**,
+- **trazabilidad por `transaction_id` y `correlation_id`**.
+
+Para métricas como CPU, RAM y percentiles agregados, se recomienda medir externamente con herramientas como:
+
+- `docker stats`
+- Prometheus
+- Grafana
+- procesamiento posterior de resultados
+
+---
+
+## Artefactos relacionados
+
+- Documento técnico: `Documento_tecnico_n8n_API_mock_Caso_A.docx`
+- Workflow de n8n: `CASO_A_Recarga_Tullave_endpoints_simulados_corregido.json`
+- Colección Postman: `Postman_E2E_Recarga_Tullave.postman_collection.json`
+- Environment Postman: `Postman_E2E_Recarga_Tullave.postman_environment.json`
+
+---
+
+## Uso académico
+
+Este repositorio fue construido con fines **académicos y experimentales** para apoyar la evaluación de n8n como plataforma de integración en escenarios de ciudades inteligentes.
+
+Los servicios externos están simulados y **no representan integraciones reales con entidades oficiales**.
