@@ -1,0 +1,1832 @@
+{
+  "name": "CASO B - Denuncia Digital (con endpoints simulados)",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "117f9361-5695-48f8-aeb7-603a7a089f8f",
+              "leftValue": "={{ $json.auth_status }}",
+              "rightValue": "AUTHENTICATED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3715aab9-ce28-488e-8fb0-43da0e6c3b02",
+      "name": "IF - Autenticacion aprobada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        2800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.mock_base_url + '/id-gob/auth' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  citizen_id: $json.citizen_id,\n  document_number: $json.document_number,\n  incident_description: $json.incident_description,\n  incident_address: $json.incident_address,\n  incident_category: $json.incident_category,\n  municipality_code: $json.municipality_code,\n  requested_scope: $('Webhook - Evento de denuncia').item.json.body?.requested_scope ?? $('Webhook - Evento de denuncia').item.json.requested_scope ?? 'denuncia.write denuncia.read',\n  delay_ms: $('Webhook - Evento de denuncia').item.json.body?.delay_ms ?? $('Webhook - Evento de denuncia').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de denuncia').item.json.body?.jitter_ms ?? $('Webhook - Evento de denuncia').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de denuncia').item.json.body?.fail_rate ?? $('Webhook - Evento de denuncia').item.json.fail_rate,\n  force_error: $('Webhook - Evento de denuncia').item.json.body?.force_error ?? $('Webhook - Evento de denuncia').item.json.force_error,\n  force_reject: $('Webhook - Evento de denuncia').item.json.body?.force_auth_reject ?? $('Webhook - Evento de denuncia').item.json.force_auth_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "f2790016-d89f-4985-b112-e79a32c5b58d",
+      "name": "HTTP - Autenticacion IDGob",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2240,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "44c2ddd7-2650-4bfa-8e36-586eaf8b4c7b",
+              "leftValue": "={{ $json.identity_valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f0559a01-49df-410f-a95e-620b95a42575",
+      "name": "IF - Identidad valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        2656
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalizacion)1').item.json.mock_base_url + '/registraduria/verify-identity' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $('Init + t0 (normalizacion)1').item.json.transaction_id,\n  citizen_id: $('Init + t0 (normalizacion)1').item.json.citizen_id,\n  document_number: $('Init + t0 (normalizacion)1').item.json.document_number,\n  incident_description: $('Init + t0 (normalizacion)1').item.json.incident_description,\n  incident_address: $('Init + t0 (normalizacion)1').item.json.incident_address,\n  incident_category: $('Init + t0 (normalizacion)1').item.json.incident_category,\n  municipality_code: $('Init + t0 (normalizacion)1').item.json.municipality_code,\n  auth_token: $json.auth_token,\n  verification_mode: $('Webhook - Evento de denuncia').item.json.body?.verification_mode ?? $('Webhook - Evento de denuncia').item.json.verification_mode ?? 'document',\n  delay_ms: $('Webhook - Evento de denuncia').item.json.body?.delay_ms ?? $('Webhook - Evento de denuncia').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de denuncia').item.json.body?.jitter_ms ?? $('Webhook - Evento de denuncia').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de denuncia').item.json.body?.fail_rate ?? $('Webhook - Evento de denuncia').item.json.fail_rate,\n  force_error: $('Webhook - Evento de denuncia').item.json.body?.force_error ?? $('Webhook - Evento de denuncia').item.json.force_error,\n  force_invalid_identity: $('Webhook - Evento de denuncia').item.json.body?.force_invalid_identity ?? $('Webhook - Evento de denuncia').item.json.force_invalid_identity ?? false\n} }}",
+        "options": {}
+      },
+      "id": "0f83df50-b529-441d-a56c-277d899014f8",
+      "name": "HTTP - Validacion Registraduria",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2816,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalizacion)1').item.json.mock_base_url + '/georef/geocode' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $('Init + t0 (normalizacion)1').item.json.transaction_id,\n  citizen_id: $('Init + t0 (normalizacion)1').item.json.citizen_id,\n  document_number: $('Init + t0 (normalizacion)1').item.json.document_number,\n  incident_description: $('Init + t0 (normalizacion)1').item.json.incident_description,\n  incident_address: $('Init + t0 (normalizacion)1').item.json.incident_address,\n  incident_category: $('Init + t0 (normalizacion)1').item.json.incident_category,\n  municipality_code: $('Init + t0 (normalizacion)1').item.json.municipality_code,\n  delay_ms: $('Webhook - Evento de denuncia').item.json.body?.delay_ms ?? $('Webhook - Evento de denuncia').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de denuncia').item.json.body?.jitter_ms ?? $('Webhook - Evento de denuncia').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de denuncia').item.json.body?.fail_rate ?? $('Webhook - Evento de denuncia').item.json.fail_rate,\n  force_error: $('Webhook - Evento de denuncia').item.json.body?.force_error ?? $('Webhook - Evento de denuncia').item.json.force_error,\n  force_reject: $('Webhook - Evento de denuncia').item.json.body?.force_georef_reject ?? $('Webhook - Evento de denuncia').item.json.force_georef_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "79ebbb83-4584-4aab-9643-eee288ceecc5",
+      "name": "HTTP - Georreferenciacion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3088,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalizacion)1').item.json.mock_base_url + '/policia/classify' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $('Init + t0 (normalizacion)1').item.json.transaction_id,\n  citizen_id: $('Init + t0 (normalizacion)1').item.json.citizen_id,\n  document_number: $('Init + t0 (normalizacion)1').item.json.document_number,\n  incident_description: $('Init + t0 (normalizacion)1').item.json.incident_description,\n  incident_address: $('Init + t0 (normalizacion)1').item.json.incident_address,\n  incident_category: $('Init + t0 (normalizacion)1').item.json.incident_category,\n  municipality_code: $('Init + t0 (normalizacion)1').item.json.municipality_code,\n  auth_token: $('HTTP - Autenticacion IDGob').item.json.auth_token,\n  identity_valid: $('HTTP - Validacion Registraduria').item.json.identity_valid,\n  delay_ms: $('Webhook - Evento de denuncia').item.json.body?.delay_ms ?? $('Webhook - Evento de denuncia').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de denuncia').item.json.body?.jitter_ms ?? $('Webhook - Evento de denuncia').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de denuncia').item.json.body?.fail_rate ?? $('Webhook - Evento de denuncia').item.json.fail_rate,\n  force_error: $('Webhook - Evento de denuncia').item.json.body?.force_error ?? $('Webhook - Evento de denuncia').item.json.force_error,\n  force_reject: $('Webhook - Evento de denuncia').item.json.body?.force_policia_reject ?? $('Webhook - Evento de denuncia').item.json.force_policia_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "1a753670-bbb0-4b74-8d52-5947322953bc",
+      "name": "HTTP - Clasificacion Policia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3360,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalizacion)1').item.json.mock_base_url + '/fiscalia/register' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $('Init + t0 (normalizacion)1').item.json.transaction_id,\n  citizen_id: $('Init + t0 (normalizacion)1').item.json.citizen_id,\n  document_number: $('Init + t0 (normalizacion)1').item.json.document_number,\n  incident_description: $('Init + t0 (normalizacion)1').item.json.incident_description,\n  incident_address: $('Init + t0 (normalizacion)1').item.json.incident_address,\n  incident_category: $('Init + t0 (normalizacion)1').item.json.incident_category,\n  municipality_code: $('Init + t0 (normalizacion)1').item.json.municipality_code,\n  auth_token: $('HTTP - Autenticacion IDGob').item.json.auth_token,\n  identity_valid: $('HTTP - Validacion Registraduria').item.json.identity_valid,\n  offense_code: $('HTTP - Clasificacion Policia').item.json.offense_code,\n  police_case_reference: $('HTTP - Clasificacion Policia').item.json.police_case_reference,\n  territorial_uri: $('HTTP - Georreferenciacion').item.json.territorial_uri,\n  delay_ms: $('Webhook - Evento de denuncia').item.json.body?.delay_ms ?? $('Webhook - Evento de denuncia').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de denuncia').item.json.body?.jitter_ms ?? $('Webhook - Evento de denuncia').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de denuncia').item.json.body?.fail_rate ?? $('Webhook - Evento de denuncia').item.json.fail_rate,\n  force_error: $('Webhook - Evento de denuncia').item.json.body?.force_error ?? $('Webhook - Evento de denuncia').item.json.force_error,\n  force_reject: $('Webhook - Evento de denuncia').item.json.body?.force_fiscalia_reject ?? $('Webhook - Evento de denuncia').item.json.force_fiscalia_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "3532ff46-6ac3-4a09-bf56-80eb4b10602d",
+      "name": "HTTP - Registro Fiscalia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3632,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalizacion)1').item.json.mock_base_url + '/notify/email' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $('Init + t0 (normalizacion)1').item.json.transaction_id,\n  citizen_id: $('Init + t0 (normalizacion)1').item.json.citizen_id,\n  document_number: $('Init + t0 (normalizacion)1').item.json.document_number,\n  incident_description: $('Init + t0 (normalizacion)1').item.json.incident_description,\n  incident_address: $('Init + t0 (normalizacion)1').item.json.incident_address,\n  incident_category: $('Init + t0 (normalizacion)1').item.json.incident_category,\n  municipality_code: $('Init + t0 (normalizacion)1').item.json.municipality_code,\n  channel: $('Init + t0 (normalizacion)1').item.json.channel,\n  noticia_criminal_number: $('HTTP - Registro Fiscalia').item.json.noticia_criminal_number,\n  radicado_id: $('HTTP - Registro Fiscalia').item.json.radicado_id,\n  delay_ms: $('Webhook - Evento de denuncia').item.json.body?.delay_ms ?? $('Webhook - Evento de denuncia').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de denuncia').item.json.body?.jitter_ms ?? $('Webhook - Evento de denuncia').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de denuncia').item.json.body?.fail_rate ?? $('Webhook - Evento de denuncia').item.json.fail_rate,\n  force_error: $('Webhook - Evento de denuncia').item.json.body?.force_error ?? $('Webhook - Evento de denuncia').item.json.force_error,\n  force_reject: $('Webhook - Evento de denuncia').item.json.body?.force_notify_reject ?? $('Webhook - Evento de denuncia').item.json.force_notify_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "3f507f48-490c-4b34-be97-23e3116e78df",
+      "name": "HTTP - Notificacion institucional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3904,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "INVALID_IDENTITY"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($('Init + t0 (normalizacion)1').item.json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6ae440fe-0965-48ea-8547-4e3be4e9b0ee",
+      "name": "t1 + latencia (identidad invalida)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_name",
+              "value": "CASO_B_DENUNCIA_DIGITAL"
+            },
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.citizen_id }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.document_number }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.incident_category }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.incident_address }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "Identidad no valida; flujo detenido antes de georreferenciacion y registro"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "auth_status",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_status }}"
+            },
+            {
+              "name": "auth_provider",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_provider }}"
+            },
+            {
+              "name": "identity_status",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.identity_status }}"
+            },
+            {
+              "name": "verification_mode",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.verification_mode }}"
+            },
+            {
+              "name": "registraduria_reference",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.registraduria_reference }}"
+            },
+            {
+              "name": "georef_status",
+              "value": ""
+            },
+            {
+              "name": "territorial_uri",
+              "value": ""
+            },
+            {
+              "name": "police_status",
+              "value": ""
+            },
+            {
+              "name": "offense_code",
+              "value": ""
+            },
+            {
+              "name": "police_case_reference",
+              "value": ""
+            },
+            {
+              "name": "fiscalia_status",
+              "value": ""
+            },
+            {
+              "name": "noticia_criminal_number",
+              "value": ""
+            },
+            {
+              "name": "radicado_id",
+              "value": ""
+            },
+            {
+              "name": "notification_status",
+              "value": ""
+            },
+            {
+              "name": "notification_channel",
+              "value": ""
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_auth",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_identity",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_georef",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_policia",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_fiscalia",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ 0 }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "authenticated",
+              "value": "={{ true }}"
+            },
+            {
+              "name": "identity_valid",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.identity_valid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "97517693-e8d8-4794-8022-ea13961c06f9",
+      "name": "Build Response (identidad invalida)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "03d22900-eadb-4291-b6f7-7260c0b65241",
+      "name": "Respond to Webhook (identidad invalida)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3264,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "AUTH_DENIED"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($('Init + t0 (normalizacion)1').item.json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0e4cdada-86be-4dfc-a138-388dca66cf0a",
+      "name": "t1 + latencia (autenticacion denegada)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_name",
+              "value": "CASO_B_DENUNCIA_DIGITAL"
+            },
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.citizen_id }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.document_number }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.incident_category }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.incident_address }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "Autenticacion ciudadana denegada; flujo detenido"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "auth_status",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_status }}"
+            },
+            {
+              "name": "auth_provider",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_provider }}"
+            },
+            {
+              "name": "identity_status",
+              "value": ""
+            },
+            {
+              "name": "verification_mode",
+              "value": ""
+            },
+            {
+              "name": "registraduria_reference",
+              "value": ""
+            },
+            {
+              "name": "georef_status",
+              "value": ""
+            },
+            {
+              "name": "territorial_uri",
+              "value": ""
+            },
+            {
+              "name": "police_status",
+              "value": ""
+            },
+            {
+              "name": "offense_code",
+              "value": ""
+            },
+            {
+              "name": "police_case_reference",
+              "value": ""
+            },
+            {
+              "name": "fiscalia_status",
+              "value": ""
+            },
+            {
+              "name": "noticia_criminal_number",
+              "value": ""
+            },
+            {
+              "name": "radicado_id",
+              "value": ""
+            },
+            {
+              "name": "notification_status",
+              "value": ""
+            },
+            {
+              "name": "notification_channel",
+              "value": ""
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_auth",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_identity",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_georef",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_policia",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_fiscalia",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ 0 }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "authenticated",
+              "value": "={{ false }}"
+            },
+            {
+              "name": "identity_valid",
+              "value": "={{ false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2eaf8a09-22ed-4dfc-ba9f-7853111c1eca",
+      "name": "Build Response (autenticacion denegada)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6d19f446-5c44-49e5-96d3-530f1a69b458",
+      "name": "Respond to Webhook (autenticacion denegada)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoB-denuncia-digital-v1",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "78a0f9c8-c443-4427-a881-e6dafd961951",
+      "name": "Webhook - Evento de denuncia",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        2800
+      ],
+      "webhookId": "d3c4b051-ac31-4264-8895-febe15ce1e56"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "mock_base_url",
+              "value": "={{ $json.body?.mock_base_url || $json.mock_base_url || 'http://localhost:8002' }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.body?.transaction_id || $json.transaction_id || $json.body?.id || $json.id || $uuid }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ ($json.body?.citizen_id || $json.citizen_id || 'citizen-demo').toString() }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ ($json.body?.document_number || $json.document_number || '1020304050').toString() }}"
+            },
+            {
+              "name": "incident_description",
+              "value": "={{ ($json.body?.incident_description || $json.incident_description || 'Denuncia digital generada desde n8n').toString() }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ ($json.body?.incident_address || $json.incident_address || 'Bogota D.C.').toString() }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ ($json.body?.incident_category || $json.incident_category || 'GENERAL').toString() }}"
+            },
+            {
+              "name": "municipality_code",
+              "value": "={{ ($json.body?.municipality_code || $json.municipality_code || '11001').toString() }}"
+            },
+            {
+              "name": "channel",
+              "value": "={{ ($json.body?.channel || $json.channel || 'EMAIL').toString() }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "91ad7537-273f-4034-97c7-6a2daa005705",
+      "name": "Init + t0 (normalizacion)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        2800
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($('Init + t0 (normalizacion)1').item.json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72d246c7-7cb3-4edd-a720-49515515c78e",
+      "name": "t1 + latencia (exito)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        4176,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_name",
+              "value": "CASO_B_DENUNCIA_DIGITAL"
+            },
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.transaction_id }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.citizen_id }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.document_number }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.incident_category }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.incident_address }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": ""
+            },
+            {
+              "name": "message",
+              "value": "Denuncia digital procesada correctamente"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $('Init + t0 (normalizacion)1').item.json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "auth_status",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_status }}"
+            },
+            {
+              "name": "auth_provider",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_provider }}"
+            },
+            {
+              "name": "identity_status",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.identity_status }}"
+            },
+            {
+              "name": "verification_mode",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.verification_mode }}"
+            },
+            {
+              "name": "registraduria_reference",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.registraduria_reference }}"
+            },
+            {
+              "name": "georef_status",
+              "value": "={{ $('HTTP - Georreferenciacion').item.json.georef_status }}"
+            },
+            {
+              "name": "territorial_uri",
+              "value": "={{ $('HTTP - Registro Fiscalia').item.json.territorial_uri || $('HTTP - Georreferenciacion').item.json.territorial_uri }}"
+            },
+            {
+              "name": "police_status",
+              "value": "={{ $('HTTP - Clasificacion Policia').item.json.police_status }}"
+            },
+            {
+              "name": "offense_code",
+              "value": "={{ $('HTTP - Clasificacion Policia').item.json.offense_code }}"
+            },
+            {
+              "name": "police_case_reference",
+              "value": "={{ $('HTTP - Clasificacion Policia').item.json.police_case_reference }}"
+            },
+            {
+              "name": "fiscalia_status",
+              "value": "={{ $('HTTP - Registro Fiscalia').item.json.fiscalia_status }}"
+            },
+            {
+              "name": "noticia_criminal_number",
+              "value": "={{ $('HTTP - Registro Fiscalia').item.json.noticia_criminal_number }}"
+            },
+            {
+              "name": "radicado_id",
+              "value": "={{ $('HTTP - Registro Fiscalia').item.json.radicado_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $('HTTP - Notificacion institucional').item.json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $('HTTP - Notificacion institucional').item.json.notification_channel }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_auth",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_identity",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_georef",
+              "value": "={{ $('HTTP - Georreferenciacion').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_policia",
+              "value": "={{ $('HTTP - Clasificacion Policia').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_fiscalia",
+              "value": "={{ $('HTTP - Registro Fiscalia').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $('HTTP - Notificacion institucional').item.json.service_latency_ms || 0 }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "authenticated",
+              "value": "={{ $('HTTP - Autenticacion IDGob').item.json.auth_status === 'AUTHENTICATED' }}"
+            },
+            {
+              "name": "identity_valid",
+              "value": "={{ $('HTTP - Validacion Registraduria').item.json.identity_valid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f9c2c833-030b-436e-af2f-42dc8d416750",
+      "name": "Build Response (exito)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1d5af11c-8438-4c6c-b52c-6e14edae9285",
+      "name": "Respond to Webhook (exito)1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        4624,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "execution_source",
+              "value": "n8n_caso_b"
+            },
+            {
+              "name": "case_name",
+              "value": "={{ $json.case_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.transaction_id }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $json.citizen_id }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ $json.document_number }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ $json.incident_category }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ $json.incident_address }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "auth_status",
+              "value": "={{ $json.auth_status }}"
+            },
+            {
+              "name": "auth_provider",
+              "value": "={{ $json.auth_provider }}"
+            },
+            {
+              "name": "identity_status",
+              "value": "={{ $json.identity_status }}"
+            },
+            {
+              "name": "verification_mode",
+              "value": "={{ $json.verification_mode }}"
+            },
+            {
+              "name": "registraduria_reference",
+              "value": "={{ $json.registraduria_reference }}"
+            },
+            {
+              "name": "georef_status",
+              "value": "={{ $json.georef_status }}"
+            },
+            {
+              "name": "territorial_uri",
+              "value": "={{ $json.territorial_uri }}"
+            },
+            {
+              "name": "police_status",
+              "value": "={{ $json.police_status }}"
+            },
+            {
+              "name": "offense_code",
+              "value": "={{ $json.offense_code }}"
+            },
+            {
+              "name": "police_case_reference",
+              "value": "={{ $json.police_case_reference }}"
+            },
+            {
+              "name": "fiscalia_status",
+              "value": "={{ $json.fiscalia_status }}"
+            },
+            {
+              "name": "noticia_criminal_number",
+              "value": "={{ $json.noticia_criminal_number }}"
+            },
+            {
+              "name": "radicado_id",
+              "value": "={{ $json.radicado_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $json.notification_channel }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_auth",
+              "value": "={{ $json.service_latency_ms_auth }}"
+            },
+            {
+              "name": "service_latency_ms_identity",
+              "value": "={{ $json.service_latency_ms_identity }}"
+            },
+            {
+              "name": "service_latency_ms_georef",
+              "value": "={{ $json.service_latency_ms_georef }}"
+            },
+            {
+              "name": "service_latency_ms_policia",
+              "value": "={{ $json.service_latency_ms_policia }}"
+            },
+            {
+              "name": "service_latency_ms_fiscalia",
+              "value": "={{ $json.service_latency_ms_fiscalia }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $json.service_latency_ms_notify }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "authenticated",
+              "value": "={{ $json.authenticated }}"
+            },
+            {
+              "name": "identity_valid",
+              "value": "={{ $json.identity_valid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9f3fd08-6bde-473f-bfa2-f838f3cd278d",
+      "name": "Set - Record for Dashboard (exito)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        4512,
+        2560
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "execution_source",
+              "value": "n8n_caso_b"
+            },
+            {
+              "name": "case_name",
+              "value": "={{ $json.case_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.transaction_id }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $json.citizen_id }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ $json.document_number }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ $json.incident_category }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ $json.incident_address }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "auth_status",
+              "value": "={{ $json.auth_status }}"
+            },
+            {
+              "name": "auth_provider",
+              "value": "={{ $json.auth_provider }}"
+            },
+            {
+              "name": "identity_status",
+              "value": "={{ $json.identity_status }}"
+            },
+            {
+              "name": "verification_mode",
+              "value": "={{ $json.verification_mode }}"
+            },
+            {
+              "name": "registraduria_reference",
+              "value": "={{ $json.registraduria_reference }}"
+            },
+            {
+              "name": "georef_status",
+              "value": "={{ $json.georef_status }}"
+            },
+            {
+              "name": "territorial_uri",
+              "value": "={{ $json.territorial_uri }}"
+            },
+            {
+              "name": "police_status",
+              "value": "={{ $json.police_status }}"
+            },
+            {
+              "name": "offense_code",
+              "value": "={{ $json.offense_code }}"
+            },
+            {
+              "name": "police_case_reference",
+              "value": "={{ $json.police_case_reference }}"
+            },
+            {
+              "name": "fiscalia_status",
+              "value": "={{ $json.fiscalia_status }}"
+            },
+            {
+              "name": "noticia_criminal_number",
+              "value": "={{ $json.noticia_criminal_number }}"
+            },
+            {
+              "name": "radicado_id",
+              "value": "={{ $json.radicado_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $json.notification_channel }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_auth",
+              "value": "={{ $json.service_latency_ms_auth }}"
+            },
+            {
+              "name": "service_latency_ms_identity",
+              "value": "={{ $json.service_latency_ms_identity }}"
+            },
+            {
+              "name": "service_latency_ms_georef",
+              "value": "={{ $json.service_latency_ms_georef }}"
+            },
+            {
+              "name": "service_latency_ms_policia",
+              "value": "={{ $json.service_latency_ms_policia }}"
+            },
+            {
+              "name": "service_latency_ms_fiscalia",
+              "value": "={{ $json.service_latency_ms_fiscalia }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $json.service_latency_ms_notify }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "authenticated",
+              "value": "={{ $json.authenticated }}"
+            },
+            {
+              "name": "identity_valid",
+              "value": "={{ $json.identity_valid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "613f6bf9-9cef-4c21-ae44-b75df679cbb4",
+      "name": "Set - Record for Dashboard (autenticacion denegada)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2576,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "execution_source",
+              "value": "n8n_caso_b"
+            },
+            {
+              "name": "case_name",
+              "value": "={{ $json.case_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.transaction_id }}"
+            },
+            {
+              "name": "citizen_id",
+              "value": "={{ $json.citizen_id }}"
+            },
+            {
+              "name": "document_number",
+              "value": "={{ $json.document_number }}"
+            },
+            {
+              "name": "incident_category",
+              "value": "={{ $json.incident_category }}"
+            },
+            {
+              "name": "incident_address",
+              "value": "={{ $json.incident_address }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "auth_status",
+              "value": "={{ $json.auth_status }}"
+            },
+            {
+              "name": "auth_provider",
+              "value": "={{ $json.auth_provider }}"
+            },
+            {
+              "name": "identity_status",
+              "value": "={{ $json.identity_status }}"
+            },
+            {
+              "name": "verification_mode",
+              "value": "={{ $json.verification_mode }}"
+            },
+            {
+              "name": "registraduria_reference",
+              "value": "={{ $json.registraduria_reference }}"
+            },
+            {
+              "name": "georef_status",
+              "value": "={{ $json.georef_status }}"
+            },
+            {
+              "name": "territorial_uri",
+              "value": "={{ $json.territorial_uri }}"
+            },
+            {
+              "name": "police_status",
+              "value": "={{ $json.police_status }}"
+            },
+            {
+              "name": "offense_code",
+              "value": "={{ $json.offense_code }}"
+            },
+            {
+              "name": "police_case_reference",
+              "value": "={{ $json.police_case_reference }}"
+            },
+            {
+              "name": "fiscalia_status",
+              "value": "={{ $json.fiscalia_status }}"
+            },
+            {
+              "name": "noticia_criminal_number",
+              "value": "={{ $json.noticia_criminal_number }}"
+            },
+            {
+              "name": "radicado_id",
+              "value": "={{ $json.radicado_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $json.notification_channel }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_auth",
+              "value": "={{ $json.service_latency_ms_auth }}"
+            },
+            {
+              "name": "service_latency_ms_identity",
+              "value": "={{ $json.service_latency_ms_identity }}"
+            },
+            {
+              "name": "service_latency_ms_georef",
+              "value": "={{ $json.service_latency_ms_georef }}"
+            },
+            {
+              "name": "service_latency_ms_policia",
+              "value": "={{ $json.service_latency_ms_policia }}"
+            },
+            {
+              "name": "service_latency_ms_fiscalia",
+              "value": "={{ $json.service_latency_ms_fiscalia }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $json.service_latency_ms_notify }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "authenticated",
+              "value": "={{ $json.authenticated }}"
+            },
+            {
+              "name": "identity_valid",
+              "value": "={{ $json.identity_valid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "752d812c-2cd2-4247-8296-f4a8482bc9e7",
+      "name": "Set - Record for Dashboard (identidad invalida)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        3152,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_b_metrics",
+          "mode": "list",
+          "cachedResultName": "case_b_metrics"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "86edff48-fa15-40dc-a914-e6da197c8fbc",
+      "name": "Insert Dashboard Record (exito)1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4736,
+        2560
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "TODO - Replace with your Postgres credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_b_metrics",
+          "mode": "list",
+          "cachedResultName": "case_b_metrics"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "2181f3c3-8e35-4028-b828-35b8693b4636",
+      "name": "Insert Dashboard Record (autenticacion denegada)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2784,
+        2960
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "TODO - Replace with your Postgres credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_b_metrics",
+          "mode": "list",
+          "cachedResultName": "case_b_metrics"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "09bac545-5779-4f01-86fa-e07bf38b79b0",
+      "name": "Insert Dashboard Record (identidad invalida)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3360,
+        2752
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "TODO - Replace with your Postgres credential"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Evento de denuncia": {
+      "main": [
+        [
+          {
+            "node": "Init + t0 (normalizacion)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init + t0 (normalizacion)1": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Autenticacion IDGob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Autenticacion IDGob": {
+      "main": [
+        [
+          {
+            "node": "IF - Autenticacion aprobada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Autenticacion aprobada?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Validacion Registraduria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "t1 + latencia (autenticacion denegada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Validacion Registraduria": {
+      "main": [
+        [
+          {
+            "node": "IF - Identidad valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Identidad valida?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Georreferenciacion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "t1 + latencia (identidad invalida)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Georreferenciacion": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Clasificacion Policia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Clasificacion Policia": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Registro Fiscalia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Registro Fiscalia": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Notificacion institucional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Notificacion institucional": {
+      "main": [
+        [
+          {
+            "node": "t1 + latencia (exito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (autenticacion denegada)": {
+      "main": [
+        [
+          {
+            "node": "Build Response (autenticacion denegada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (autenticacion denegada)": {
+      "main": [
+        [
+          {
+            "node": "Set - Record for Dashboard (autenticacion denegada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Record for Dashboard (autenticacion denegada)": {
+      "main": [
+        [
+          {
+            "node": "Insert Dashboard Record (autenticacion denegada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Dashboard Record (autenticacion denegada)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (autenticacion denegada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (identidad invalida)": {
+      "main": [
+        [
+          {
+            "node": "Build Response (identidad invalida)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (identidad invalida)": {
+      "main": [
+        [
+          {
+            "node": "Set - Record for Dashboard (identidad invalida)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Record for Dashboard (identidad invalida)": {
+      "main": [
+        [
+          {
+            "node": "Insert Dashboard Record (identidad invalida)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Dashboard Record (identidad invalida)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (identidad invalida)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (exito)1": {
+      "main": [
+        [
+          {
+            "node": "Build Response (exito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (exito)1": {
+      "main": [
+        [
+          {
+            "node": "Set - Record for Dashboard (exito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Record for Dashboard (exito)1": {
+      "main": [
+        [
+          {
+            "node": "Insert Dashboard Record (exito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Dashboard Record (exito)1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (exito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "550c4ae5-4a30-460b-84c3-8008e3796362",
+  "meta": {
+    "instanceId": "4ab74ba8dc44e84679270e2291a6cad4bb7aa9e2232c851e17911f86a373f59b"
+  },
+  "id": "yjUUlo8XaWH8nQ3boqkGJ",
+  "tags": []
+}

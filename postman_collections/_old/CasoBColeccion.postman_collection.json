@@ -1,0 +1,1150 @@
+{
+  "info": {
+    "name": "n8n E2E - Denuncia Digital",
+    "_postman_id": "3624a041-2e35-476f-9940-fbdb2778b283",
+    "description": "Colección Postman para probar el flujo end-to-end del Caso B (Denuncia Digital) en n8n con mocks FastAPI.\n\nIncluye:\n- pruebas E2E contra el webhook de n8n\n- pruebas directas a cada mock service\n- scripts para encadenar variables útiles entre requests\n\nImporta también el environment unificado A+B. Por defecto el webhook del Caso B apunta a /webhook-test y los mocks del Caso B a http://host.docker.internal:8002.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "n8n_webhook_url_case_b",
+      "value": "http://localhost:5678/webhook-test/casoB-denuncia-digital-v1",
+      "type": "string"
+    },
+    {
+      "key": "n8n_webhook_url_prod_case_b",
+      "value": "http://localhost:5678/webhook/casoB-denuncia-digital-v1",
+      "type": "string"
+    },
+    {
+      "key": "mock_base_url_case_b",
+      "value": "http://host.docker.internal:8002",
+      "type": "string"
+    },
+    {
+      "key": "cid",
+      "value": "test-correlation-001",
+      "type": "string"
+    },
+    {
+      "key": "auth_token_case_b",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "police_case_reference_case_b",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "territorial_uri_case_b",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "noticia_criminal_number_case_b",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "radicado_id_case_b",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "E2E - n8n Webhook Caso B",
+      "description": "Requests end-to-end contra el webhook del Caso B.",
+      "item": [
+        {
+          "name": "E2E 01 - Éxito completo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-ok-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Camino feliz completo del proceso de denuncia digital."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Resultado ok', function () { pm.expect(data.status).to.eql('ok'); });",
+                  "pm.test('Autenticado e identidad válida', function () { pm.expect(data.authenticated).to.eql(true); pm.expect(data.identity_valid).to.eql(true); });",
+                  "pm.test('Fiscalía y notificación exitosas', function () { pm.expect(data.fiscalia_status).to.eql('REGISTERED'); pm.expect(data.notification_status).to.eql('SENT'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 02 - Autenticación denegada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-auth-denied-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_auth_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Se detiene justo después del servicio de autenticación."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Rechazo por autenticación', function () { pm.expect(data.status).to.eql('rejected'); pm.expect(data.fail_reason).to.eql('AUTH_DENIED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 03 - Identidad inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-invalid-identity-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_invalid_identity\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Autenticación exitosa pero identidad inválida en Registraduría."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Rechazo por identidad inválida', function () { pm.expect(data.status).to.eql('rejected'); pm.expect(data.fail_reason).to.eql('INVALID_IDENTITY'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 04 - Falla georreferenciación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-georef-fail-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_georef_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "La georreferenciación responde FAILED pero el flujo continúa."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Georreferenciación fallida visible en respuesta', function () { pm.expect(data.status).to.eql('ok'); pm.expect(data.georef_status).to.eql('FAILED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 05 - Rechazo clasificación Policía",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-policia-reject-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_policia_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "La clasificación policial se marca como REJECTED y se propaga al registro posterior."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Policía rechaza', function () { pm.expect(data.status).to.eql('ok'); pm.expect(data.police_status).to.eql('REJECTED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 06 - Rechazo registro Fiscalía",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-fiscalia-reject-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_fiscalia_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "El registro en Fiscalía devuelve REJECTED."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Fiscalía rechaza', function () { pm.expect(data.status).to.eql('ok'); pm.expect(data.fiscalia_status).to.eql('REJECTED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 07 - Falla notificación institucional",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-notify-reject-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_notify_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "La notificación final falla, pero el webhook responde con trazabilidad."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Notificación fallida', function () { pm.expect(data.status).to.eql('ok'); pm.expect(data.notification_status).to.eql('FAILED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 08 - Error técnico global",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-tech-error-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"force_error\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "La bandera de error técnico se propaga a los mocks y normalmente rompe en el primer upstream."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "pm.test('Status técnico esperado (>=500)', function () { pm.expect(pm.response.code).to.be.oneOf([500,502,503]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 09 - Latencia simulada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-latency-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"delay_ms\": 300,\n  \"jitter_ms\": 700\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Permite medir el tiempo total del flujo con latencia artificial."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 10 - Canal SMS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-sms-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"SMS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Fuerza canal SMS en la notificación institucional."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Canal SMS reflejado', function () { pm.expect(data.notification_channel).to.eql('SMS'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 11 - Verificación biométrica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-biometric-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"verification_mode\": \"biometric\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Ejecuta el flujo usando verificación biométrica en Registraduría."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Modo biométrico reflejado', function () { pm.expect(data.verification_mode).to.eql('biometric'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E 12 - Categoría Ciberdelito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_base_url\": \"{{mock_base_url_case_b}}\",\n  \"transaction_id\": \"tx-b-cyber-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Acceso abusivo a una cuenta institucional\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"CIBERDELITO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{n8n_webhook_url_case_b}}",
+            "description": "Valida clasificación de delito para cibercrimen."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Incluye transaction_id', function () { pm.expect(data.transaction_id).to.exist; });",
+                  "pm.test('Incluye status', function () { pm.expect(data.status).to.exist; });",
+                  "pm.test('Incluye latency_ms', function () { pm.expect(data.latency_ms).to.be.a('number'); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Código de delito generado', function () { pm.expect(data.offense_code).to.eql('ACCESO_ABUSIVO_A_SISTEMA'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mock APIs - Caso B",
+      "description": "Pruebas directas a los servicios simulados del Caso B.",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{mock_base_url_case_b}}/health",
+            "description": "Verifica disponibilidad del contenedor FastAPI del Caso B."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta JSON', function () { pm.response.to.be.json; });",
+                  "const data = pm.response.json();",
+                  "pm.test('Health ok', function () { pm.expect(data.status).to.eql('ok'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01 - IDGob Auth OK",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-auth-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"requested_scope\": \"denuncia.write denuncia.read\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/id-gob/auth",
+            "description": "Autenticación directa contra ID·Gob mock."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('auth_token_case_b', data.auth_token || '');",
+                  "pm.test('Autenticado', function () { pm.expect(data.auth_status).to.eql('AUTHENTICATED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - IDGob Auth DENIED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-auth-denied-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"requested_scope\": \"denuncia.write denuncia.read\",\n  \"force_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/id-gob/auth",
+            "description": "Autenticación directa rechazada."
+          },
+          "response": []
+        },
+        {
+          "name": "03 - Registraduría VALID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-id-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"auth_token\": \"{{auth_token_case_b}}\",\n  \"verification_mode\": \"document\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/registraduria/verify-identity",
+            "description": "Verificación de identidad exitosa."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('auth_token_case_b')) { pm.environment.set('auth_token_case_b', 'tok-tx-b-direct-auth-001'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Identidad válida', function () { pm.expect(data.identity_valid).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 - Registraduría INVALID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-id-invalid-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"auth_token\": \"{{auth_token_case_b}}\",\n  \"verification_mode\": \"document\",\n  \"force_invalid_identity\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/registraduria/verify-identity",
+            "description": "Verificación de identidad fallida."
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Georef GEOCODED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-georef-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/georef/geocode",
+            "description": "Geocodificación exitosa."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('territorial_uri_case_b', data.territorial_uri || '');",
+                  "pm.test('Geocodificado', function () { pm.expect(data.georef_status).to.eql('GEOCODED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 - Georef FAILED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-georef-fail-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"force_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/georef/geocode",
+            "description": "Geocodificación fallida."
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Policía CLASSIFIED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-pol-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"auth_token\": \"{{auth_token_case_b}}\",\n  \"identity_valid\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/policia/classify",
+            "description": "Clasificación policial exitosa."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('auth_token_case_b')) { pm.environment.set('auth_token_case_b', 'tok-tx-b-direct-auth-001'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('police_case_reference_case_b', data.police_case_reference || '');",
+                  "pm.test('Clasificado', function () { pm.expect(data.police_status).to.eql('CLASSIFIED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 - Policía REJECTED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-pol-reject-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"auth_token\": \"{{auth_token_case_b}}\",\n  \"identity_valid\": true,\n  \"force_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/policia/classify",
+            "description": "Clasificación policial rechazada."
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Fiscalía REGISTERED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-fisc-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"auth_token\": \"{{auth_token_case_b}}\",\n  \"identity_valid\": true,\n  \"offense_code\": \"HURTO_SIMPLE\",\n  \"police_case_reference\": \"{{police_case_reference_case_b}}\",\n  \"territorial_uri\": \"{{territorial_uri_case_b}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/fiscalia/register",
+            "description": "Registro exitoso en Fiscalía."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('auth_token_case_b')) { pm.environment.set('auth_token_case_b', 'tok-tx-b-direct-auth-001'); }",
+                  "if (!pm.environment.get('police_case_reference_case_b')) { pm.environment.set('police_case_reference_case_b', 'SPOA-POL-tx-b-direct-pol-001'); }",
+                  "if (!pm.environment.get('territorial_uri_case_b')) { pm.environment.set('territorial_uri_case_b', 'uri://territorio/11001/tx-b-direct-georef-001'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('noticia_criminal_number_case_b', data.noticia_criminal_number || '');",
+                  "pm.environment.set('radicado_id_case_b', data.radicado_id || '');",
+                  "pm.test('Registrado', function () { pm.expect(data.fiscalia_status).to.eql('REGISTERED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 - Fiscalía REJECTED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-fisc-reject-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"auth_token\": \"{{auth_token_case_b}}\",\n  \"identity_valid\": true,\n  \"offense_code\": \"HURTO_SIMPLE\",\n  \"police_case_reference\": \"{{police_case_reference_case_b}}\",\n  \"territorial_uri\": \"{{territorial_uri_case_b}}\",\n  \"force_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/fiscalia/register",
+            "description": "Registro rechazado en Fiscalía."
+          },
+          "response": []
+        },
+        {
+          "name": "11 - Notify SENT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-notify-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"EMAIL\",\n  \"noticia_criminal_number\": \"{{noticia_criminal_number_case_b}}\",\n  \"radicado_id\": \"{{radicado_id_case_b}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/notify/email",
+            "description": "Notificación institucional exitosa."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('noticia_criminal_number_case_b')) { pm.environment.set('noticia_criminal_number_case_b', 'NC-11001-tx-b-direct-fisc-001'); }",
+                  "if (!pm.environment.get('radicado_id_case_b')) { pm.environment.set('radicado_id_case_b', 'RAD-tx-b-direct-fisc-001'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code es 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Notificación enviada', function () { pm.expect(data.notification_status).to.eql('SENT'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 - Notify FAILED",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{cid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-b-direct-notify-fail-001\",\n  \"citizen_id\": \"citizen-demo-001\",\n  \"document_number\": \"1020304050\",\n  \"incident_description\": \"Hurto de celular en espacio público\",\n  \"incident_address\": \"Carrera 7 # 12-34, Bogotá D.C.\",\n  \"incident_category\": \"HURTO\",\n  \"municipality_code\": \"11001\",\n  \"channel\": \"SMS\",\n  \"noticia_criminal_number\": \"{{noticia_criminal_number_case_b}}\",\n  \"radicado_id\": \"{{radicado_id_case_b}}\",\n  \"force_reject\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{mock_base_url_case_b}}/notify/email",
+            "description": "Notificación institucional fallida."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

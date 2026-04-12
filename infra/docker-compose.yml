@@ -17,7 +17,7 @@ services:
     container_name: casea-mock-api
     restart: always
     ports:
-      - "8001:8001"  # opcional (solo si quieres pegarle desde tu PC)
+      - "8001:8001" 
     environment:
       MIN_DELAY_MS: 0
       MAX_DELAY_MS: 0
@@ -33,7 +33,7 @@ services:
     container_name: caseb-mock-api
     restart: always
     ports:
-      - "8002:8002"  # opcional (solo si quieres pegarle desde tu PC)
+      - "8002:8002" 
     environment:
       MIN_DELAY_MS: 0
       MAX_DELAY_MS: 0

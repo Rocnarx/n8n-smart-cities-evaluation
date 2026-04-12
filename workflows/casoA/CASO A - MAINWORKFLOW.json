@@ -1,0 +1,1952 @@
+{
+  "name": "CASO A - Recarga Tullave (con endpoints simulados)",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "d3d27283-bccc-41f6-bd1c-ffd5303fd13d",
+              "leftValue": "={{ $json.payment_status }}",
+              "rightValue": "APPROVED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "145b1ee0-f29a-4d0d-86cb-05be7b6e3fd6",
+      "name": "IF - Pago aprobado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5344,
+        3872
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.mock_base_url + '/funds/validate' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  delay_ms: $('Webhook - Evento de pago1').item.json.body?.delay_ms ?? $('Webhook - Evento de pago1').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de pago1').item.json.body?.jitter_ms ?? $('Webhook - Evento de pago1').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de pago1').item.json.body?.fail_rate ?? $('Webhook - Evento de pago1').item.json.fail_rate,\n  force_error: $('Webhook - Evento de pago1').item.json.body?.force_error ?? $('Webhook - Evento de pago1').item.json.force_error,\n  force_insufficient: $('Webhook - Evento de pago1').item.json.body?.force_insufficient ?? $('Webhook - Evento de pago1').item.json.force_insufficient ?? false\n} }}",
+        "options": {}
+      },
+      "id": "23aaf378-aa91-4733-a166-83dc772ce270",
+      "name": "HTTP - Validación de fondos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5616,
+        3728
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "71ec8dc2-a363-4a9d-bc24-a4b7346e3353",
+              "leftValue": "={{ $json.funds_ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "049ea8f8-6a13-49bb-af75-9f078132e463",
+      "name": "IF - Fondos suficientes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5904,
+        3728
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalización)1').item.json.mock_base_url + '/bank/confirm' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  delay_ms: $('Webhook - Evento de pago1').item.json.body?.delay_ms ?? $('Webhook - Evento de pago1').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de pago1').item.json.body?.jitter_ms ?? $('Webhook - Evento de pago1').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de pago1').item.json.body?.fail_rate ?? $('Webhook - Evento de pago1').item.json.fail_rate,\n  force_error: $('Webhook - Evento de pago1').item.json.body?.force_error ?? $('Webhook - Evento de pago1').item.json.force_error,\n  force_reject: $('Webhook - Evento de pago1').item.json.body?.force_bank_reject ?? $('Webhook - Evento de pago1').item.json.force_bank_reject ?? $('Webhook - Evento de pago1').item.json.body?.force_reject ?? $('Webhook - Evento de pago1').item.json.force_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "94c38fcf-b650-45e5-b4d6-1ffc348f3f26",
+      "name": "HTTP - Confirmación bancaria",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6192,
+        3440
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalización)1').item.json.mock_base_url + '/recaudo/bogota' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  delay_ms: $('Webhook - Evento de pago1').item.json.body?.delay_ms ?? $('Webhook - Evento de pago1').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de pago1').item.json.body?.jitter_ms ?? $('Webhook - Evento de pago1').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de pago1').item.json.body?.fail_rate ?? $('Webhook - Evento de pago1').item.json.fail_rate,\n  force_error: $('Webhook - Evento de pago1').item.json.body?.force_error ?? $('Webhook - Evento de pago1').item.json.force_error,\n  force_reject: $('Webhook - Evento de pago1').item.json.body?.force_recaudo_reject ?? $('Webhook - Evento de pago1').item.json.force_recaudo_reject ?? $('Webhook - Evento de pago1').item.json.body?.force_reject ?? $('Webhook - Evento de pago1').item.json.force_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "8ecd591c-ddba-4344-a971-27c94640fdb8",
+      "name": "HTTP - Recaudo Bogotá",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6384,
+        3440
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalización)1').item.json.mock_base_url + '/tullave/activate' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  delay_ms: $('Webhook - Evento de pago1').item.json.body?.delay_ms ?? $('Webhook - Evento de pago1').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de pago1').item.json.body?.jitter_ms ?? $('Webhook - Evento de pago1').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de pago1').item.json.body?.fail_rate ?? $('Webhook - Evento de pago1').item.json.fail_rate,\n  force_error: $('Webhook - Evento de pago1').item.json.body?.force_error ?? $('Webhook - Evento de pago1').item.json.force_error,\n  force_reject: $('Webhook - Evento de pago1').item.json.body?.force_tullave_reject ?? $('Webhook - Evento de pago1').item.json.force_tullave_reject ?? $('Webhook - Evento de pago1').item.json.body?.force_reject ?? $('Webhook - Evento de pago1').item.json.force_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "aa3fa77b-2f55-4fed-bd8c-9ab4a16cbbf0",
+      "name": "HTTP - Sistema Tullave",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6576,
+        3440
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalización)1').item.json.mock_base_url + '/dian/report' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  delay_ms: $('Webhook - Evento de pago1').item.json.body?.delay_ms ?? $('Webhook - Evento de pago1').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de pago1').item.json.body?.jitter_ms ?? $('Webhook - Evento de pago1').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de pago1').item.json.body?.fail_rate ?? $('Webhook - Evento de pago1').item.json.fail_rate,\n  force_error: $('Webhook - Evento de pago1').item.json.body?.force_error ?? $('Webhook - Evento de pago1').item.json.force_error,\n  force_reject: $('Webhook - Evento de pago1').item.json.body?.force_dian_reject ?? $('Webhook - Evento de pago1').item.json.force_dian_reject ?? $('Webhook - Evento de pago1').item.json.body?.force_reject ?? $('Webhook - Evento de pago1').item.json.force_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "1836a457-9539-4a61-b007-2f90e5dd973d",
+      "name": "HTTP - Reporte DIAN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6752,
+        3440
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Init + t0 (normalización)1').item.json.mock_base_url + '/notify/email' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-correlation-id",
+              "value": "={{ $json.transaction_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  amount: $json.amount,\n  account_balance: $json.account_balance,\n  channel: $('Webhook - Evento de pago1').item.json.body?.channel ?? $('Webhook - Evento de pago1').item.json.channel ?? 'EMAIL',\n  delay_ms: $('Webhook - Evento de pago1').item.json.body?.delay_ms ?? $('Webhook - Evento de pago1').item.json.delay_ms,\n  jitter_ms: $('Webhook - Evento de pago1').item.json.body?.jitter_ms ?? $('Webhook - Evento de pago1').item.json.jitter_ms,\n  fail_rate: $('Webhook - Evento de pago1').item.json.body?.fail_rate ?? $('Webhook - Evento de pago1').item.json.fail_rate,\n  force_error: $('Webhook - Evento de pago1').item.json.body?.force_error ?? $('Webhook - Evento de pago1').item.json.force_error,\n  force_reject: $('Webhook - Evento de pago1').item.json.body?.force_notify_reject ?? $('Webhook - Evento de pago1').item.json.force_notify_reject ?? $('Webhook - Evento de pago1').item.json.body?.force_reject ?? $('Webhook - Evento de pago1').item.json.force_reject ?? false\n} }}",
+        "options": {}
+      },
+      "id": "25badf2d-9efc-41db-85c1-20c8dcfaf5e8",
+      "name": "HTTP - Notificación transaccional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6928,
+        3440
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "INSUFFICIENT_FUNDS"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($('Init + t0 (normalización)1').item.json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7abc3e38-b1aa-49ff-bb00-35b45baff719",
+      "name": "t1 + latencia (fondos insuficientes)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6192,
+        3824
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_name",
+              "value": "CASO_A_TULLAVE"
+            },
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.transaction_id }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.payment_status }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "Fondos insuficientes; flujo detenido (mock endpoint)"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "bank_confirmation_status"
+            },
+            {
+              "name": "bank_confirmation_ref"
+            },
+            {
+              "name": "recaudo_status"
+            },
+            {
+              "name": "recaudo_reference"
+            },
+            {
+              "name": "tullave_message"
+            },
+            {
+              "name": "dian_report_status"
+            },
+            {
+              "name": "dian_report_id"
+            },
+            {
+              "name": "notification_status"
+            },
+            {
+              "name": "notification_channel"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.amount }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.account_balance }}"
+            },
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_funds",
+              "value": "={{ $('HTTP - Validación de fondos').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_bank",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_recaudo",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_tullave",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_dian",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ 0 }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "funds_ok",
+              "value": "={{ $('HTTP - Validación de fondos').item.json.funds_ok }}"
+            },
+            {
+              "name": "tullave_activated",
+              "value": "={{ false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "35d13f1d-fb84-42d3-a023-ecbd8941dc1d",
+      "name": "Build Response (fondos insuficientes)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6416,
+        3824
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8ec84547-7cea-4807-a415-93d798939f45",
+      "name": "Respond to Webhook (fondos insuficientes)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        6976,
+        3824
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "PAYMENT_NOT_APPROVED"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($('Init + t0 (normalización)1').item.json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8644021a-e265-4e56-b06e-d8cfcb86de6b",
+      "name": "t1 + latencia (pago rechazado)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        5616,
+        4032
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_name",
+              "value": "CASO_A_TULLAVE"
+            },
+            {
+              "name": "status",
+              "value": "rejected"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.transaction_id }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.payment_status }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "Pago no aprobado; flujo detenido antes de llamar los mocks"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "bank_confirmation_status"
+            },
+            {
+              "name": "bank_confirmation_ref"
+            },
+            {
+              "name": "recaudo_status"
+            },
+            {
+              "name": "recaudo_reference"
+            },
+            {
+              "name": "tullave_message"
+            },
+            {
+              "name": "dian_report_status"
+            },
+            {
+              "name": "dian_report_id"
+            },
+            {
+              "name": "notification_status"
+            },
+            {
+              "name": "notification_channel"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.amount }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.account_balance }}"
+            },
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_funds",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_bank",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_recaudo",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_tullave",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_dian",
+              "value": "={{ 0 }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ 0 }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "funds_ok",
+              "value": "={{ false }}"
+            },
+            {
+              "name": "tullave_activated",
+              "value": "={{ false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "afd11f1c-0e71-4259-beb9-26a3c6b69c89",
+      "name": "Build Response (pago rechazado)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        5840,
+        4032
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8390835e-6ebf-44c3-afe3-95d7d14a87e4",
+      "name": "Respond to Webhook (pago rechazado)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        6560,
+        4032
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "casoA-recarga-tullave-v2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4ba5c40d-cea1-4e25-99b0-d28d2787c8e7",
+      "name": "Webhook - Evento de pago1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        4800,
+        3872
+      ],
+      "webhookId": "7bccc390-5f0c-49ad-abbe-c6544a8e5034",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "mock_base_url",
+              "value": "={{ $json.body?.mock_base_url || $json.mock_base_url || 'http://localhost:8000' }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.body?.transaction_id || $json.transaction_id || $json.body?.id || $json.id || $uuid }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ ($json.body?.payment_status || $json.payment_status || 'APPROVED').toString() }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ Number($json.body?.amount || $json.amount || 0) }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ Number($json.body?.account_balance || $json.account_balance || 10000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa977d07-9d0c-48f9-b3cf-03a8eafd26b0",
+      "name": "Init + t0 (normalización)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        5072,
+        3872
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "end_time",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "latency_ms",
+              "value": "={{ $now.toMillis() - new Date($('Init + t0 (normalización)1').item.json.start_time).getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1bd61a49-acbc-4831-84c6-73404cba72f0",
+      "name": "t1 + latencia (éxito)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        3616
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "case_name",
+              "value": "CASO_A_TULLAVE"
+            },
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.transaction_id }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.payment_status }}"
+            },
+            {
+              "name": "fail_reason"
+            },
+            {
+              "name": "message",
+              "value": "Recarga procesada correctamente"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "bank_confirmation_status",
+              "value": "={{ $('HTTP - Confirmación bancaria').item.json.bank_confirmation_status }}"
+            },
+            {
+              "name": "bank_confirmation_ref",
+              "value": "={{ $('HTTP - Confirmación bancaria').item.json.bank_confirmation_ref }}"
+            },
+            {
+              "name": "recaudo_status",
+              "value": "={{ $('HTTP - Recaudo Bogotá').item.json.recaudo_status }}"
+            },
+            {
+              "name": "recaudo_reference",
+              "value": "={{ $('HTTP - Recaudo Bogotá').item.json.recaudo_reference }}"
+            },
+            {
+              "name": "tullave_message",
+              "value": "={{ $('HTTP - Sistema Tullave').item.json.tullave_message }}"
+            },
+            {
+              "name": "dian_report_status",
+              "value": "={{ $('HTTP - Reporte DIAN').item.json.dian_report_status }}"
+            },
+            {
+              "name": "dian_report_id",
+              "value": "={{ $('HTTP - Reporte DIAN').item.json.dian_report_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $('HTTP - Notificación transaccional').item.json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $('HTTP - Notificación transaccional').item.json.notification_channel }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.amount }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ $('Init + t0 (normalización)1').item.json.account_balance }}"
+            },
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_funds",
+              "value": "={{ $('HTTP - Validación de fondos').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_bank",
+              "value": "={{ $('HTTP - Confirmación bancaria').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_recaudo",
+              "value": "={{ $('HTTP - Recaudo Bogotá').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_tullave",
+              "value": "={{ $('HTTP - Sistema Tullave').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_dian",
+              "value": "={{ $('HTTP - Reporte DIAN').item.json.service_latency_ms || 0 }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $('HTTP - Notificación transaccional').item.json.service_latency_ms || 0 }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "funds_ok",
+              "value": "={{ $('HTTP - Validación de fondos').item.json.funds_ok }}"
+            },
+            {
+              "name": "tullave_activated",
+              "value": "={{ $('HTTP - Sistema Tullave').item.json.tullave_activated }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4b037b8d-5a01-4f9a-bf52-bd97c76fb94f",
+      "name": "Build Response (éxito)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        7232,
+        3616
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "49e3dfdd-93db-4a77-9d09-a76fe7caa8e8",
+      "name": "Respond to Webhook (éxito)1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        7744,
+        3616
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "execution_source",
+              "value": "n8n_caso_a"
+            },
+            {
+              "name": "case_name",
+              "value": "={{ $json.case_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.transaction_id }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ $json.payment_status }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "bank_confirmation_status",
+              "value": "={{ $json.bank_confirmation_status }}"
+            },
+            {
+              "name": "bank_confirmation_ref",
+              "value": "={{ $json.bank_confirmation_ref }}"
+            },
+            {
+              "name": "recaudo_status",
+              "value": "={{ $json.recaudo_status }}"
+            },
+            {
+              "name": "recaudo_reference",
+              "value": "={{ $json.recaudo_reference }}"
+            },
+            {
+              "name": "tullave_message",
+              "value": "={{ $json.tullave_message }}"
+            },
+            {
+              "name": "dian_report_status",
+              "value": "={{ $json.dian_report_status }}"
+            },
+            {
+              "name": "dian_report_id",
+              "value": "={{ $json.dian_report_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $json.notification_channel }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ $json.account_balance }}"
+            },
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_funds",
+              "value": "={{ $json.service_latency_ms_funds }}"
+            },
+            {
+              "name": "service_latency_ms_bank",
+              "value": "={{ $json.service_latency_ms_bank }}"
+            },
+            {
+              "name": "service_latency_ms_recaudo",
+              "value": "={{ $json.service_latency_ms_recaudo }}"
+            },
+            {
+              "name": "service_latency_ms_tullave",
+              "value": "={{ $json.service_latency_ms_tullave }}"
+            },
+            {
+              "name": "service_latency_ms_dian",
+              "value": "={{ $json.service_latency_ms_dian }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $json.service_latency_ms_notify }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "funds_ok",
+              "value": "={{ $json.funds_ok }}"
+            },
+            {
+              "name": "tullave_activated",
+              "value": "={{ $json.tullave_activated }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fddcbb56-c621-4299-8584-934419de440a",
+      "name": "Set - Record for Dashboard (éxito)1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        7424,
+        3616
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "execution_source",
+              "value": "n8n_caso_a"
+            },
+            {
+              "name": "case_name",
+              "value": "={{ $json.case_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.transaction_id }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ $json.payment_status }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "bank_confirmation_status",
+              "value": "={{ $json.bank_confirmation_status }}"
+            },
+            {
+              "name": "bank_confirmation_ref",
+              "value": "={{ $json.bank_confirmation_ref }}"
+            },
+            {
+              "name": "recaudo_status",
+              "value": "={{ $json.recaudo_status }}"
+            },
+            {
+              "name": "recaudo_reference",
+              "value": "={{ $json.recaudo_reference }}"
+            },
+            {
+              "name": "tullave_message",
+              "value": "={{ $json.tullave_message }}"
+            },
+            {
+              "name": "dian_report_status",
+              "value": "={{ $json.dian_report_status }}"
+            },
+            {
+              "name": "dian_report_id",
+              "value": "={{ $json.dian_report_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $json.notification_channel }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ $json.account_balance }}"
+            },
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_funds",
+              "value": "={{ $json.service_latency_ms_funds }}"
+            },
+            {
+              "name": "service_latency_ms_bank",
+              "value": "={{ $json.service_latency_ms_bank }}"
+            },
+            {
+              "name": "service_latency_ms_recaudo",
+              "value": "={{ $json.service_latency_ms_recaudo }}"
+            },
+            {
+              "name": "service_latency_ms_tullave",
+              "value": "={{ $json.service_latency_ms_tullave }}"
+            },
+            {
+              "name": "service_latency_ms_dian",
+              "value": "={{ $json.service_latency_ms_dian }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $json.service_latency_ms_notify }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "funds_ok",
+              "value": "={{ $json.funds_ok }}"
+            },
+            {
+              "name": "tullave_activated",
+              "value": "={{ $json.tullave_activated }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "837c60ee-68c6-473d-a4ee-8898e9246dfd",
+      "name": "Set - Record for Dashboard (pago rechazado)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6048,
+        4032
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "execution_source",
+              "value": "n8n_caso_a"
+            },
+            {
+              "name": "case_name",
+              "value": "={{ $json.case_name }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "transaction_id",
+              "value": "={{ $json.transaction_id }}"
+            },
+            {
+              "name": "payment_status",
+              "value": "={{ $json.payment_status }}"
+            },
+            {
+              "name": "fail_reason",
+              "value": "={{ $json.fail_reason }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{ $json.start_time }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json.end_time }}"
+            },
+            {
+              "name": "bank_confirmation_status",
+              "value": "={{ $json.bank_confirmation_status }}"
+            },
+            {
+              "name": "bank_confirmation_ref",
+              "value": "={{ $json.bank_confirmation_ref }}"
+            },
+            {
+              "name": "recaudo_status",
+              "value": "={{ $json.recaudo_status }}"
+            },
+            {
+              "name": "recaudo_reference",
+              "value": "={{ $json.recaudo_reference }}"
+            },
+            {
+              "name": "tullave_message",
+              "value": "={{ $json.tullave_message }}"
+            },
+            {
+              "name": "dian_report_status",
+              "value": "={{ $json.dian_report_status }}"
+            },
+            {
+              "name": "dian_report_id",
+              "value": "={{ $json.dian_report_id }}"
+            },
+            {
+              "name": "notification_status",
+              "value": "={{ $json.notification_status }}"
+            },
+            {
+              "name": "notification_channel",
+              "value": "={{ $json.notification_channel }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "account_balance",
+              "value": "={{ $json.account_balance }}"
+            },
+            {
+              "name": "latency_ms",
+              "value": "={{ $json.latency_ms }}"
+            },
+            {
+              "name": "service_latency_ms_funds",
+              "value": "={{ $json.service_latency_ms_funds }}"
+            },
+            {
+              "name": "service_latency_ms_bank",
+              "value": "={{ $json.service_latency_ms_bank }}"
+            },
+            {
+              "name": "service_latency_ms_recaudo",
+              "value": "={{ $json.service_latency_ms_recaudo }}"
+            },
+            {
+              "name": "service_latency_ms_tullave",
+              "value": "={{ $json.service_latency_ms_tullave }}"
+            },
+            {
+              "name": "service_latency_ms_dian",
+              "value": "={{ $json.service_latency_ms_dian }}"
+            },
+            {
+              "name": "service_latency_ms_notify",
+              "value": "={{ $json.service_latency_ms_notify }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "funds_ok",
+              "value": "={{ $json.funds_ok }}"
+            },
+            {
+              "name": "tullave_activated",
+              "value": "={{ $json.tullave_activated }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "037bc3e4-bfa0-4fce-8e86-b71548faec5c",
+      "name": "Set - Record for Dashboard (fondos insuficientes)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6576,
+        3824
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_a_metrics",
+          "mode": "list",
+          "cachedResultName": "case_a_metrics"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "ed99541e-fa8a-439b-8f79-c012cdede745",
+      "name": "Insert Dashboard Record (éxito)1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7584,
+        3616
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ztVYZet2Eox72Jhm",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_a_metrics",
+          "mode": "list",
+          "cachedResultName": "case_a_metrics"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "563a3153-aa50-47f4-b160-597fc01b3367",
+      "name": "Insert Dashboard Record (pago rechazado)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6304,
+        4032
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ztVYZet2Eox72Jhm",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "case_a_metrics",
+          "mode": "list",
+          "cachedResultName": "case_a_metrics"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "funds_ok": false,
+            "tullave_activated": false
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "execution_source",
+              "displayName": "execution_source",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "case_name",
+              "displayName": "case_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "transaction_id",
+              "displayName": "transaction_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "payment_status",
+              "displayName": "payment_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fail_reason",
+              "displayName": "fail_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "start_time",
+              "displayName": "start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "end_time",
+              "displayName": "end_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "bank_confirmation_status",
+              "displayName": "bank_confirmation_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "bank_confirmation_ref",
+              "displayName": "bank_confirmation_ref",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recaudo_status",
+              "displayName": "recaudo_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recaudo_reference",
+              "displayName": "recaudo_reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tullave_message",
+              "displayName": "tullave_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dian_report_status",
+              "displayName": "dian_report_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dian_report_id",
+              "displayName": "dian_report_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notification_status",
+              "displayName": "notification_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notification_channel",
+              "displayName": "notification_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "account_balance",
+              "displayName": "account_balance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "latency_ms",
+              "displayName": "latency_ms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service_latency_ms_funds",
+              "displayName": "service_latency_ms_funds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service_latency_ms_bank",
+              "displayName": "service_latency_ms_bank",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service_latency_ms_recaudo",
+              "displayName": "service_latency_ms_recaudo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service_latency_ms_tullave",
+              "displayName": "service_latency_ms_tullave",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service_latency_ms_dian",
+              "displayName": "service_latency_ms_dian",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service_latency_ms_notify",
+              "displayName": "service_latency_ms_notify",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "funds_ok",
+              "displayName": "funds_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tullave_activated",
+              "displayName": "tullave_activated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "6d2867f9-d1f7-468c-bcf3-5eeb5cac18e0",
+      "name": "Insert Dashboard Record (fondos insuficientes)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6768,
+        3824
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ztVYZet2Eox72Jhm",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IF - Pago aprobado?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Validación de fondos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "t1 + latencia (pago rechazado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Validación de fondos": {
+      "main": [
+        [
+          {
+            "node": "IF - Fondos suficientes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Fondos suficientes?": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Confirmación bancaria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "t1 + latencia (fondos insuficientes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Confirmación bancaria": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Recaudo Bogotá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Recaudo Bogotá": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Sistema Tullave",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Sistema Tullave": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Reporte DIAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Reporte DIAN": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Notificación transaccional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Notificación transaccional": {
+      "main": [
+        [
+          {
+            "node": "t1 + latencia (éxito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (fondos insuficientes)": {
+      "main": [
+        [
+          {
+            "node": "Build Response (fondos insuficientes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (fondos insuficientes)": {
+      "main": [
+        [
+          {
+            "node": "Set - Record for Dashboard (fondos insuficientes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (pago rechazado)": {
+      "main": [
+        [
+          {
+            "node": "Build Response (pago rechazado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (pago rechazado)": {
+      "main": [
+        [
+          {
+            "node": "Set - Record for Dashboard (pago rechazado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Evento de pago1": {
+      "main": [
+        [
+          {
+            "node": "Init + t0 (normalización)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init + t0 (normalización)1": {
+      "main": [
+        [
+          {
+            "node": "IF - Pago aprobado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "t1 + latencia (éxito)1": {
+      "main": [
+        [
+          {
+            "node": "Build Response (éxito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response (éxito)1": {
+      "main": [
+        [
+          {
+            "node": "Set - Record for Dashboard (éxito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Record for Dashboard (éxito)1": {
+      "main": [
+        [
+          {
+            "node": "Insert Dashboard Record (éxito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Record for Dashboard (pago rechazado)": {
+      "main": [
+        [
+          {
+            "node": "Insert Dashboard Record (pago rechazado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Record for Dashboard (fondos insuficientes)": {
+      "main": [
+        [
+          {
+            "node": "Insert Dashboard Record (fondos insuficientes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Dashboard Record (éxito)1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (éxito)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Dashboard Record (pago rechazado)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (pago rechazado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Dashboard Record (fondos insuficientes)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook (fondos insuficientes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "1b98596c-27d4-4314-b644-413f81294e77",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ab74ba8dc44e84679270e2291a6cad4bb7aa9e2232c851e17911f86a373f59b"
+  },
+  "id": "yjUUlo8XaWH8nQ3boqkGJ",
+  "tags": []
+}

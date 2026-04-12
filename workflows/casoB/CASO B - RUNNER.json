@@ -1,0 +1,198 @@
+{
+  "name": "Runner - Caso B Batch interno",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "8dfca0e2-c0e5-45e0-8b27-ad93fe4d82ed",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "webhook_url",
+              "value": "http://localhost:5678/webhook-test/casoB-denuncia-digital-v1"
+            },
+            {
+              "name": "mock_base_url",
+              "value": "http://caseb-mock-api:8002"
+            },
+            {
+              "name": "channel",
+              "value": "EMAIL"
+            },
+            {
+              "name": "incident_category",
+              "value": "HURTO"
+            },
+            {
+              "name": "verification_mode",
+              "value": "document"
+            }
+          ],
+          "number": [
+            {
+              "name": "success_count",
+              "value": 30
+            },
+            {
+              "name": "auth_denied_count",
+              "value": 10
+            },
+            {
+              "name": "invalid_identity_count",
+              "value": 10
+            },
+            {
+              "name": "georef_reject_count",
+              "value": 5
+            },
+            {
+              "name": "policia_reject_count",
+              "value": 5
+            },
+            {
+              "name": "fiscalia_reject_count",
+              "value": 5
+            },
+            {
+              "name": "notify_reject_count",
+              "value": 5
+            },
+            {
+              "name": "latency_count",
+              "value": 10
+            },
+            {
+              "name": "delay_ms",
+              "value": 250
+            },
+            {
+              "name": "jitter_ms",
+              "value": 75
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1eac7dae-e9ef-464a-8cc8-a6ca1e808ac0",
+      "name": "Set - Runner Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $input.first().json;\nconst now = Date.now();\nconst items = [];\n\nconst addCases = (scenario, count, extra = {}) => {\n  for (let i = 0; i < Number(count || 0); i++) {\n    items.push({\n      json: {\n        webhook_url: cfg.webhook_url,\n        mock_base_url: cfg.mock_base_url,\n        channel: cfg.channel || 'EMAIL',\n        scenario,\n        transaction_id: `tx-${scenario}-${now}-${String(i + 1).padStart(3, '0')}`,\n        citizen_id: `citizen-${String(i + 1).padStart(3, '0')}`,\n        document_number: `10${String(20000000 + i)}`,\n        incident_description: `Denuncia digital de prueba - ${scenario}`,\n        incident_address: 'Carrera 7 # 12-34, Bogotá D.C.',\n        incident_category: cfg.incident_category || 'HURTO',\n        municipality_code: '11001',\n        requested_scope: 'denuncia.write denuncia.read',\n        verification_mode: cfg.verification_mode || 'document',\n        force_auth_reject: false,\n        force_invalid_identity: false,\n        force_georef_reject: false,\n        force_policia_reject: false,\n        force_fiscalia_reject: false,\n        force_notify_reject: false,\n        delay_ms: 0,\n        jitter_ms: 0,\n        ...extra,\n      },\n    });\n  }\n};\n\naddCases('success', cfg.success_count);\naddCases('auth_denied', cfg.auth_denied_count, {\n  force_auth_reject: true,\n});\naddCases('invalid_identity', cfg.invalid_identity_count, {\n  force_invalid_identity: true,\n});\naddCases('georef_reject', cfg.georef_reject_count, {\n  force_georef_reject: true,\n});\naddCases('policia_reject', cfg.policia_reject_count, {\n  force_policia_reject: true,\n});\naddCases('fiscalia_reject', cfg.fiscalia_reject_count, {\n  force_fiscalia_reject: true,\n});\naddCases('notify_reject', cfg.notify_reject_count, {\n  force_notify_reject: true,\n});\naddCases('latency_simulated', cfg.latency_count, {\n  delay_ms: Number(cfg.delay_ms || 250),\n  jitter_ms: Number(cfg.jitter_ms || 75),\n});\n\nreturn items;"
+      },
+      "id": "1d899153-3e75-409b-b04c-1b9479b75090",
+      "name": "Code - Build Test Cases",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.webhook_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  transaction_id: $json.transaction_id,\n  citizen_id: $json.citizen_id,\n  document_number: $json.document_number,\n  incident_description: $json.incident_description,\n  incident_address: $json.incident_address,\n  incident_category: $json.incident_category,\n  municipality_code: $json.municipality_code,\n  requested_scope: $json.requested_scope,\n  verification_mode: $json.verification_mode,\n  mock_base_url: $json.mock_base_url,\n  channel: $json.channel,\n  delay_ms: $json.delay_ms,\n  jitter_ms: $json.jitter_ms,\n  force_auth_reject: $json.force_auth_reject,\n  force_invalid_identity: $json.force_invalid_identity,\n  force_georef_reject: $json.force_georef_reject,\n  force_policia_reject: $json.force_policia_reject,\n  force_fiscalia_reject: $json.force_fiscalia_reject,\n  force_notify_reject: $json.force_notify_reject\n} }}",
+        "options": {}
+      },
+      "id": "c80ac55e-4632-4654-b058-24edc9a8c934",
+      "name": "HTTP - Trigger Caso B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        -272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\nconst byStatus = {};\nconst byReason = {};\n\nfor (const row of rows) {\n  const status = row.status || 'unknown';\n  const reason = row.fail_reason || '(none)';\n  byStatus[status] = (byStatus[status] || 0) + 1;\n  byReason[reason] = (byReason[reason] || 0) + 1;\n}\n\nreturn [\n  {\n    json: {\n      total_requests: rows.length,\n      by_status: byStatus,\n      by_fail_reason: byReason,\n      sample: rows.slice(0, 5),\n    },\n  },\n];"
+      },
+      "id": "06fe7237-42c7-4c9c-b148-c1b374ecb0c2",
+      "name": "Code - Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -272
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Runner Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Runner Config": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Test Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Test Cases": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Trigger Caso B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Trigger Caso B": {
+      "main": [
+        [
+          {
+            "node": "Code - Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "de327b00-1f1f-45d5-a130-7e7bbb40bb03",
+  "meta": {
+    "instanceId": "4ab74ba8dc44e84679270e2291a6cad4bb7aa9e2232c851e17911f86a373f59b"
+  },
+  "id": "3SJAn5mvG4IkPuKUiTYmv",
+  "tags": []
+}
